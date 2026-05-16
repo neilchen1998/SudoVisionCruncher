@@ -81,8 +81,8 @@ def predict_digit(model: tf.keras.models, img) -> tuple[int, float]:
 
 if __name__ == "__main__":
 
-    MODEL_PATH = 'digit_recognition_model.h5'
-    IMAGE_PATH = 'nine.jpg'
+    MODEL_PATH = '/Users/neil/Develop/SudoVisionCruncher/models/digit_recognition_model.keras'
+    IMAGE_PATH = '/Users/neil/Develop/SudoVisionCruncher/data/nine.jpg'
 
     digit_model = load_model(MODEL_PATH)
 

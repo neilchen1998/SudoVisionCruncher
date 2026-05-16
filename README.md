@@ -6,8 +6,8 @@
 
 * [uv](https://docs.astral.sh/uv/)
 * Python 3.11.15
-* [Tensorflow](https://www.tensorflow.org/) 2.15.1
-* [Metal](https://developer.apple.com/metal/tensorflow-plugin/) 1.1.0 (for Mac Silicon)
+* [Tensorflow](https://www.tensorflow.org/) 2.18.0
+* [Metal](https://developer.apple.com/metal/tensorflow-plugin/) 1.2.0 (for Mac Silicon)
 
 ## Instructions
 
