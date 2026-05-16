@@ -79,16 +79,20 @@ def predict_digit(model: tf.keras.models, img) -> tuple[int, float]:
 
     return predicted_digit, confidence
 
-if __name__ == "__main__":
+def run_digit_prediction_pipeline(model_path, image_path):
+    """
+    Runs the entire pipeline that predicts the digit and output a confidence score
 
-    MODEL_PATH = '/Users/neil/Develop/SudoVisionCruncher/models/digit_recognition_model.keras'
-    IMAGE_PATH = '/Users/neil/Develop/SudoVisionCruncher/data/nine.jpg'
+    Args:
+        model_path: The path of the model
+        image_path: The path of the original image
 
-    digit_model = load_model(MODEL_PATH)
+    Returns:
+        tuple[int, float]: [the index of the predicted digit, the confidence score]
+    """
 
-    img_final = load_and_preprocess_image(IMAGE_PATH)
+    digit_model = load_model(model_path)
 
-    digit, conf = predict_digit(digit_model, img_final)
+    img_final = load_and_preprocess_image(image_path)
 
-    print(f"Predicted Digit : {digit}")
-    print(f"Confidence      : {conf:.2f}%")
+    return predict_digit(digit_model, img_final)
