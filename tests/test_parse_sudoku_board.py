@@ -1,7 +1,8 @@
-import os
+import cv2
+import numpy as np
 import pytest
 
-from src.parse_sudoku_board import is_valid_sudoku
+from src.parse_sudoku_board import is_valid_sudoku, flatten_board
 
 # This is a valid and completed Sudoku board
 VALID_COMPLETED = [
@@ -113,3 +114,111 @@ def test_invalid_boards(board):
     """
 
     assert is_valid_sudoku(board) is False
+
+@pytest.fixture
+def synthetic_sudoku_image():
+    """
+    Generates a synthetic 3-channel BGR image containing a clear square
+    """
+
+    # Create a blank black image
+    img = np.zeros((600, 600, 3), dtype=np.uint8)
+
+    # Draw a solid white square representing the Sudoku board
+    # Top-left: (100, 100), bottom-right: (500, 500)
+    cv2.rectangle(img, (100, 100), (500, 500), (255, 255, 255), -1)
+
+    return img
+
+
+@pytest.fixture
+def circle_image():
+    """
+    Generates a circle that doesn't have 4 vertices
+    """
+
+    # Create a blank black image
+    img = np.zeros((600, 600, 3), dtype=np.uint8)
+
+    # Draw a white circle
+    cv2.circle(img, (300, 300), 150, (255, 255, 255), -1)
+
+    return img
+
+@pytest.fixture
+def triangle_image():
+    """
+    Generates a triangle that doesn't have 4 vertices
+    """
+
+    # Create a blank black image
+    img = np.zeros((600, 600, 3), dtype=np.uint8)
+
+    # Define the three vertices
+    pts = np.array([[300, 150], [150, 450], [450, 450]], dtype=np.int32)
+    pts = pts.reshape((-1, 1, 2))
+
+    # Draw the three lines on the canvas
+    cv2.polylines(img, [pts], isClosed=True, color=(255, 255, 255), thickness=3)
+
+    return img
+
+
+def test_flatten_board_success(synthetic_sudoku_image):
+    """
+    Tests if the function successfully flattens a valid board to the default size
+    """
+
+    N = 450
+
+    # Run the function
+    result = flatten_board(synthetic_sudoku_image)
+
+    # Assert the type of the result
+    assert isinstance(result, np.ndarray), "Output should be a numpy array"
+
+    # Assert the shape of the result
+    assert result.shape == (
+        N,
+        N,
+    ), f"Output shape should be ({N}, {N})"
+
+    # Assert the shape (it should be a single-channel image)
+    assert (
+        len(result.shape) == 2
+    ), "Output should be single-channel greyscale (2D array)"
+
+    # Check that it extracted the white board area (it shouldn't be completely black)
+    assert np.max(result) > 0, "The result should contain the warped board data"
+
+@pytest.mark.parametrize("test_n", [50, 100, 150, 200, 300, 400, 500])
+def test_flatten_board_custom_n(synthetic_sudoku_image, test_n):
+    """
+    Tests if the function respects a custom N dimension parameter
+    """
+
+    result = flatten_board(synthetic_sudoku_image, N=test_n)
+
+    assert result.shape == (test_n, test_n)
+
+@pytest.mark.parametrize(
+    "image_fixture_name, expected_error, expected_error_msg",
+    [
+        ("circle_image", ValueError, "Could not find a 4-sided Sudoku board."),
+        ("triangle_image", ValueError, "Could not find a 4-sided Sudoku board."),
+    ]
+)
+def test_flatten_board_invalid_board_raises_error(request, image_fixture_name, expected_error, expected_error_msg):
+    """
+    Tests if a ValueError is raised when a 4-sided board cannot be found
+    """
+
+    # Get the image from the fixture that we define
+    img = request.getfixturevalue(image_fixture_name)
+
+    # Assert if the function raises the expected error
+    with pytest.raises(expected_error) as exc_info:
+        flatten_board(img)
+
+    # Verify the expected exception message
+    assert str(exc_info.value) == expected_error_msg
