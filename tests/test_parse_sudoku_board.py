@@ -116,22 +116,6 @@ def test_invalid_boards(board):
     assert is_valid_sudoku(board) is False
 
 @pytest.fixture
-def synthetic_sudoku_image():
-    """
-    Generates a synthetic 3-channel BGR image containing a clear square
-    """
-
-    # Create a blank black image
-    img = np.zeros((600, 600, 3), dtype=np.uint8)
-
-    # Draw a solid white square representing the Sudoku board
-    # Top-left: (100, 100), bottom-right: (500, 500)
-    cv2.rectangle(img, (100, 100), (500, 500), (255, 255, 255), -1)
-
-    return img
-
-
-@pytest.fixture
 def circle_image():
     """
     Generates a circle that doesn't have 4 vertices
@@ -200,6 +184,58 @@ def test_flatten_board_custom_n(synthetic_sudoku_image, test_n):
     result = flatten_board(synthetic_sudoku_image, N=test_n)
 
     assert result.shape == (test_n, test_n)
+
+
+@pytest.fixture
+def synthetic_sudoku_image(request) -> np.ndarray:
+    """
+    Generates an image from parameters passed via indirect parameterization
+    """
+
+    # Get the parameters from the request
+    # The default values will be used when no request is provided
+    params = getattr(request, "param", {"top_left": (100, 100), "width": 400})
+
+    top_left = params["top_left"]
+    width = params["width"]
+
+    x, y = top_left
+    bottom_right = (x + width, y + width)
+
+    # Create a canvas and draw a rectangle with given parameters on it
+    img = np.zeros((600, 600, 3), dtype=np.uint8)
+    cv2.rectangle(img, top_left, bottom_right, (255, 255, 255), -1)
+
+    return img
+
+
+def test_flatten_board_success(synthetic_sudoku_image):
+    """
+    Standard success test (uses default fixture parameters)
+    """
+
+    result = flatten_board(synthetic_sudoku_image)
+
+    assert result is not None
+
+@pytest.mark.parametrize(
+    "synthetic_sudoku_image",
+    [
+        ({"top_left": (50, 80), "width": 400}),
+        ({"top_left": (100, 100), "width": 300}),
+        ({"top_left": (150, 150), "width": 300}),
+        ({"top_left": (440, 450), "width": 300}),
+    ],
+    indirect=["synthetic_sudoku_image"],  # Only pass the dict to the fixture
+)
+def test_flatten_board_custom_values(synthetic_sudoku_image):
+    """
+    Tests custom bounding boxes
+    """
+
+    result = flatten_board(synthetic_sudoku_image)
+
+    assert result.shape == (450, 450)
 
 @pytest.mark.parametrize(
     "image_fixture_name, expected_error, expected_error_msg",
