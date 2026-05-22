@@ -241,7 +241,7 @@ def parse_sudoku_board(board: np.ndarray, model_path: str) -> list[list[int]]:
             digit = thresh[y:y+h, x:x+w]
 
             # Resize the digit but also preserve the aspect
-            target_size = 18 # digits in TMNIST used for training take up about 90% of the canvas
+            target_size = 18 # digits in TMNIST used for training take up a large chunk of the canvas
             h_digit, w_digit = digit.shape
             scale = target_size / max(h_digit, w_digit)
             new_w = int(w_digit * scale)

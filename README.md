@@ -110,14 +110,6 @@ thresh = cv2.adaptiveThreshold(
 )
 ```
 
-```python
-```
-
-```python
-```
-
-
-
 3. Remove noises
 
 We use [morphology opening] (https://homepages.inf.ed.ac.uk/rbf/HIPR2/open.htm) to remove the noises in each cell.
@@ -178,11 +170,59 @@ if area < 80:
 
 5. Extract digit
 
+We now can assume there is a digit in the grid and we want to extrac it.
+*cv2.boundingRect* returns the bounding box that surrounds the digit and we can just dissect the digit from the cell.
+
+```python
+x, y, w, h = cv2.boundingRect(largest)
+digit = thresh[y:y+h, x:x+w]
+```
+
 6. Resize digit
+
+The backend model that we use for training our OCR is trained on [TMNIST](https://www.kaggle.com/datasets/nimishmagre/tmnist-typeface-mnist).
+We want to make the input as similar as the training images that we used in order to achieve high accuracy result.
+Therefore, we need to resize the digit and put it on a 28x28 canvas.
+We resize the digit to 18x18 since the digits used in training take up a large chunk of the entire canvas (not the entire canvas)
+and we would like to replicate that property.
+
+```python
+target_size = 18
+h_digit, w_digit = digit.shape
+scale = target_size / max(h_digit, w_digit)
+new_w = int(w_digit * scale)
+new_h = int(h_digit * scale)
+resized_digit = cv2.resize(digit, (new_w, new_h))
+```
 
 7. Place digit in the center of a black canvas
 
+We create a 28x28 canvas and put the digit at the center of the canvas.
+We calcualte the x and y offset so that we know how much to offset in order to do so.
+
+```python
+canvas = np.zeros((28, 28), dtype=np.uint8)
+x_offset = (28 - new_w) // 2
+y_offset = (28 - new_h) // 2
+canvas[
+    y_offset:y_offset+new_h,
+    x_offset:x_offset+new_w
+] = resized_digit
+```
+
 8. Normalize input
+
+As we did for our training dataset, we need to also normalize the inputs in order for OCR to work properly.
+
+```python
+cell_input = (
+    canvas
+    .reshape(1, 28, 28, 1)
+    .astype("float32") / 255.0
+)
+```
+
+Voilà, now we have prepared the cell for our OCR and we can use the pretrained model to figure out the digit of the cell.
 
 ## Reference
 
