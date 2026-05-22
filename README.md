@@ -227,5 +227,5 @@ Voilà, now we have prepared the cell for our OCR and we can use the pretrained 
 ## Reference
 
 * [Image Thresholding ](https://opencv24-python-tutorials.readthedocs.io/en/latest/py_tutorials/py_imgproc/py_thresholding/py_thresholding.html)
-
 * [sudoku-5](https://mathsphere.co.uk/downloads/sudoku/10202-medium.pdf)
+* [TMNIST](https://www.kaggle.com/datasets/nimishmagre/tmnist-typeface-mnist)
