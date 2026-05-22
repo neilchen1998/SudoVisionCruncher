@@ -1,9 +1,7 @@
 import os
 import pytest
 
-from pathlib import Path
-
-from parse_sudoku_board import is_valid_sudoku
+from src.parse_sudoku_board import is_valid_sudoku
 
 # This is a valid and completed Sudoku board
 VALID_COMPLETED = [
