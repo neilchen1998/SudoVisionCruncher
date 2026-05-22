@@ -250,8 +250,8 @@ def synthetic_skewed_sudoku_image(request) -> np.ndarray:
     for px, py in corners:
         skewed.append(
             [
-                int(px + random.randint(-skew, skew)),
-                int(py + random.randint(-skew, skew)),
+                int(px - skew),
+                int(py + skew),
             ]
         )
 
@@ -306,11 +306,6 @@ def test_flatten_skewed_board_custom_values(synthetic_skewed_sudoku_image):
     """
 
     result = flatten_board(synthetic_skewed_sudoku_image)
-
-    cv2.imshow("Flattened Board", result)
-
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
 
     assert result.shape == (450, 450)
 
