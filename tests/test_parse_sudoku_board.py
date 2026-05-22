@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import pytest
+import random
 
 from src.parse_sudoku_board import is_valid_sudoku, flatten_board
 
@@ -208,6 +209,58 @@ def synthetic_sudoku_image(request) -> np.ndarray:
 
     return img
 
+@pytest.fixture
+def synthetic_skewed_sudoku_image(request) -> np.ndarray:
+    """
+    Generates a skewed white quadrilateral on a black background.
+    """
+
+    params = getattr(
+        request,
+        "param",
+        {
+            "top_left": (100, 100),
+            "width": 300,
+            "skew": 30,
+        },
+    )
+
+    top_left = params["top_left"]
+    width = params["width"]
+    skew = params["skew"]
+
+    x, y = top_left
+
+    canvas_size = 1000
+    img = np.zeros((canvas_size, canvas_size, 3), dtype=np.uint8)
+
+    # Define square corners
+    corners = np.array(
+        [
+            [x, y],                  # top-left
+            [x + width, y],          # top-right
+            [x + width, y + width],  # bottom-right
+            [x, y + width],          # bottom-left
+        ],
+        dtype=np.float32,
+    )
+
+    # Apply random skew
+    skewed = []
+    for px, py in corners:
+        skewed.append(
+            [
+                int(px + random.randint(-skew, skew)),
+                int(py + random.randint(-skew, skew)),
+            ]
+        )
+
+    skewed = np.array(skewed, dtype=np.int32)
+
+    # Draw filled polygon
+    cv2.fillPoly(img, [skewed], (255, 255, 255))
+
+    return img
 
 def test_flatten_board_success(synthetic_sudoku_image):
     """
@@ -226,7 +279,7 @@ def test_flatten_board_success(synthetic_sudoku_image):
         ({"top_left": (150, 150), "width": 300}),
         ({"top_left": (440, 450), "width": 300}),
     ],
-    indirect=["synthetic_sudoku_image"],  # Only pass the dict to the fixture
+    indirect=["synthetic_sudoku_image"],  # Tells Python we want to call the fixture
 )
 def test_flatten_board_custom_values(synthetic_sudoku_image):
     """
@@ -234,6 +287,30 @@ def test_flatten_board_custom_values(synthetic_sudoku_image):
     """
 
     result = flatten_board(synthetic_sudoku_image)
+
+    assert result.shape == (450, 450)
+
+@pytest.mark.parametrize(
+    "synthetic_skewed_sudoku_image",
+    [
+        ({"top_left": (50, 80), "width": 400, "skew": 30}),
+        ({"top_left": (100, 100), "width": 300, "skew": 40}),
+        ({"top_left": (150, 150), "width": 300, "skew": 50}),
+        ({"top_left": (440, 450), "width": 300, "skew": 90}),
+    ],
+    indirect=["synthetic_skewed_sudoku_image"],  # Tells Python we want to call the fixture
+)
+def test_flatten_skewed_board_custom_values(synthetic_skewed_sudoku_image):
+    """
+    Tests custom skewed bounding boxes
+    """
+
+    result = flatten_board(synthetic_skewed_sudoku_image)
+
+    cv2.imshow("Flattened Board", result)
+
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
     assert result.shape == (450, 450)
 
