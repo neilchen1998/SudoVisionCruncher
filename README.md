@@ -29,7 +29,7 @@ Install the packages:
 uv pip install tensorflow
 ```
 
-Install the packages via *requirements.txt*:
+Install the packages via **requirements.txt**:
 
 ```zsh
 uv pip install -r requirements.txt
@@ -45,6 +45,12 @@ Run the main script:
 
 ```zsh
 uv run ./main.py
+```
+
+Run the **pytest**:
+
+```zsh
+uv run pytest -o pythonpath=.
 ```
 
 ## Pipeline
