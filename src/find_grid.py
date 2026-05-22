@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 
+from src.digit_predict import load_model
+
 def flatten_board(img, N=450) -> np.ndarray:
 
     """
@@ -93,3 +95,194 @@ def flatten_board(img, N=450) -> np.ndarray:
     flat_board = cv2.warpPerspective(grey, M, (N, N))
 
     return flat_board
+
+def is_valid_sudoku(board: list[list[int]]) -> bool:
+    """
+    Checks if a given Sudoku board is valid
+
+    Args:
+        board: A 9x9 list of integers representing the input Sudoku board
+
+    Returns:
+        bool: True if the Sudoku board is valid, False otherwise
+    """
+
+    def is_valid_sequence(seq: list[int]):
+
+        """
+        Checks if a given Sudoku sequence (row or column) is valid
+
+        Args:
+            seq: A list of integers representing the input Sudoku sequence
+
+        Returns:
+            bool: True if the Sudoku seqeunce board is valid, False otherwise
+        """
+
+        # Create a set
+        seen = set()
+
+        # Loop through all numbers in the list
+        for num in seq:
+            if num == 0:
+                continue
+            elif num in seen:
+                return False
+            else:
+                seen.add(num)
+        return True
+
+    # Check rows
+    for row in board:
+        if not is_valid_sequence(row):
+            return False
+
+    # Check columns
+    for col in range(9):
+        sequence = [board[row][col] for row in range(9)]
+        if not is_valid_sequence(sequence):
+            return False
+
+    # Check sub-grids
+    for i in range(0, 9, 3):
+        for j in range(0, 9, 3):
+
+            # Dissect the boad into a small grid and store all the numbers in the grid into a list
+            sequence = [board[x][y] for x in range(i, i + 3) for y in range(j, j + 3)]
+
+            if not is_valid_sequence(sequence):
+                return False
+
+    return True
+
+
+def parse_sudoku_board(board: np.ndarray, model_path: str) -> list[list[int]]:
+
+    """
+    Parse a 9x9 grid image into a 2D list of predicted digits using OCR
+
+    Args:
+        board: A numpy array representing the full board image
+        model_path: Path to the pre-trained OCR model
+
+    Returns:
+        A 9x9 list of integers representing the detected digits
+    """
+
+    grid = []
+
+    # Find the size of the cell
+    cell_size = board.shape[0] // 9
+
+    # Load the model for OCR
+    model = load_model(model_path)
+
+    idx = 0
+    for r in range(9):
+        row = []
+        for c in range(9):
+
+            # Crop the cell
+            x1, y1 = c * cell_size, r * cell_size
+            x2, y2 = x1 + cell_size, y1 + cell_size
+            cell = board[y1:y2, x1:x2]
+
+            # Remove the outer margin to avoid boarders
+            margin = int(cell_size * 0.1)
+            cell = cell[
+                margin:cell_size-margin,
+                margin:cell_size-margin
+            ]
+
+            # Use adaptive threshold
+            # NOTE: block size should be an odd number
+            thresh = cv2.adaptiveThreshold(
+                cell,
+                255,
+                cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                cv2.THRESH_BINARY_INV,
+                blockSize=11,
+                C=2
+            )
+
+            # Remove noises by using a 2x2 kernel
+            kernel = np.ones((2, 2), np.uint8)
+            thresh = cv2.morphologyEx(
+                thresh,
+                cv2.MORPH_OPEN,
+                kernel
+            )
+
+            # Find the contour of the digit
+            contours, _ = cv2.findContours(
+                thresh,
+                cv2.RETR_EXTERNAL,
+                cv2.CHAIN_APPROX_SIMPLE
+            )
+
+            # If there is no contour, then we deduce the current cell is blank
+            if len(contours) == 0:
+                row.append(0)
+                idx += 1
+                continue
+
+            # Find the largest area
+            largest = max(contours, key=cv2.contourArea)
+            area = cv2.contourArea(largest)
+
+            # If the largest area is less than a threshold, then it must be a noise or an artifact
+            if area < 80:
+                row.append(0)
+                idx += 1
+                continue
+
+            # Crop the digit
+            x, y, w, h = cv2.boundingRect(largest)
+            digit = thresh[y:y+h, x:x+w]
+
+            # Resize the digit but also preserve the aspect
+            target_size = 18 # digits in TMNIST used for training take up about 90% of the canvas
+            h_digit, w_digit = digit.shape
+            scale = target_size / max(h_digit, w_digit)
+            new_w = int(w_digit * scale)
+            new_h = int(h_digit * scale)
+            resized_digit = cv2.resize(digit, (new_w, new_h))
+
+            # Put the digit in the center of a 28x28 canvas
+            canvas = np.zeros((28, 28), dtype=np.uint8)
+            x_offset = (28 - new_w) // 2
+            y_offset = (28 - new_h) // 2
+            canvas[
+                y_offset:y_offset+new_h,
+                x_offset:x_offset+new_w
+            ] = resized_digit
+
+            # Normalize the input to the model
+            cell_input = (
+                canvas
+                .reshape(1, 28, 28, 1)
+                .astype("float32") / 255.0
+            )
+
+            # Predict the digit
+            predictions = model.predict(cell_input, verbose=0)
+            predicted_digit = np.argmax(predictions, axis=-1)[0]
+
+            row.append(int(predicted_digit))
+
+            idx += 1
+
+        grid.append(row)
+
+    # Check the number of cells is correct
+    for row in grid:
+        if len(row) != 9:
+            raise ValueError("The number of cells in #{} is incorrect")
+
+    if len(grid) != 9:
+        raise ValueError("The number of rows is incorrect")
+
+    if not is_valid_sudoku(grid):
+        raise ValueError("Invalid Sudoku grid")
+
+    return grid
