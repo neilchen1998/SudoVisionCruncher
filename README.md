@@ -224,6 +224,30 @@ cell_input = (
 
 Voilà, now we have prepared the cell for our OCR and we can use the pretrained model to figure out the digit of the cell.
 
+## Batch Prediction
+
+We can utilize batches to predict our digits to speed up the process.
+We create two lists, i.e., **batch_inputs** and **positions** to store the digit inputs and the positions of those images so that we can reconstruct the board after we predict those digits.
+
+Before we pass the batch of all images of digits, we need to resize it to a numpy array.
+Note that the first argument is -1 in *reshape* is because we want to preserve the original shape (in this case, it is the number of samples in **batch_inputs**).
+
+```python
+batch_array = np.array(batch_inputs).reshape(
+    -1, # the original shape
+    MODEL_INPUT_SIZE,
+    MODEL_INPUT_SIZE,
+    1
+)
+```
+
+Then we can just call *predict* and the model will return a numpy array with all the predicitons.
+
+```python
+predictions = model.predict(batch_array, verbose=0)
+predicted_digits = np.argmax(predictions, axis=1)
+```
+
 ## Temp Path & Temp Path Factory
 
 *tmp_path* is a function provided by **Pytest** that generates a temporary directory unique to each test function.
