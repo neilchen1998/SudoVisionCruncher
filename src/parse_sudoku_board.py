@@ -173,7 +173,7 @@ def parse_sudoku_board(board: np.ndarray, model_path: str) -> list[list[int]] | 
     MIN_DIGIT_AREA = 80
     MODEL_INPUT_SIZE = 28
     DIGIT_TARGET_SIZE = 18
-    THRESH_BLOCK_SIZE = THRESH_BLOCK_SIZE
+    THRESH_BLOCK_SIZE = 11
     THRESH_C = 2
 
     grid = []
