@@ -155,7 +155,6 @@ def is_valid_sudoku(board: list[list[int]]) -> bool:
 
     return True
 
-
 def parse_sudoku_board(board: np.ndarray, model_path: str) -> list[list[int]]:
 
     """
