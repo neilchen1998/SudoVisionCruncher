@@ -28,11 +28,14 @@ def main():
     # Parse the arguments
     args = parser.parse_args()
 
+    # Load the model
+    model = load_model(args.model_path)
+
     # Import the image and turn into grey scale
     img = cv2.imread(args.image_path)
     flatten_img = flatten_board(img)
 
-    board = parse_sudoku_board(flatten_img, args.model_path)
+    board = parse_sudoku_board(flatten_img, model)
 
     print(board)
 
