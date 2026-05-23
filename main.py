@@ -9,6 +9,17 @@ from pathlib import Path
 
 from src.digit_predict import load_model
 from src.parse_sudoku_board import flatten_board, parse_sudoku_board
+from src.solver import solve_sudoku
+
+def print_board(board):
+    width = 3  # adjust for spacing
+
+    # top border
+    print("+" + ("-" * (width + 2) + "+") * len(board[0]))
+
+    for row in board:
+        print("|" + "|".join(f" {str(cell).center(width)} " for cell in row) + "|")
+        print("+" + ("-" * (width + 2) + "+") * len(board[0]))
 
 def main():
 
@@ -37,7 +48,11 @@ def main():
 
     board = parse_sudoku_board(flatten_img, model)
 
-    print(board)
+    # print_board(board)
+
+    solved = solve_sudoku(board)
+
+    print_board(solved)
 
     return
 
