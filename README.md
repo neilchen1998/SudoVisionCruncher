@@ -224,6 +224,63 @@ cell_input = (
 
 Voilà, now we have prepared the cell for our OCR and we can use the pretrained model to figure out the digit of the cell.
 
+## Temp Path & Temp Path Factory
+
+*tmp_path* is a function provided by **Pytest** that generates a temporary directory unique to each test function.
+
+In this example, we create a temporary test file called *test_sudoku.json* that is stored in a temporary location (Pytest handles the actual location) and we use it in the session.
+It will be destoried once the test is completed.
+
+```python
+def test_save_sudoku_json(tmp_path, sample_sudoku_board):
+
+    test_file = tmp_path / "test_sudoku.json"
+
+    save_sudoku_json(sample_sudoku_board, str(test_file))
+
+    # Assert the file exists
+    assert test_file.exists()
+
+    # Assert the integrity of the data
+    with open(test_file, "r") as file:
+        save_data = json.load(file)
+
+    assert save_data == {"board": sample_sudoku_board}
+```
+
+*tmp_path_factory* is a session-scoped fixture which can be used to create arbitrary temporary directories from any other fixture or test.
+
+For large files that will be used across multiple functions, one can take advantage of *tmp_path_factory*.
+The file that is created will be available in the current session so that you do not need to create one every single time.
+
+```python
+@pytest.fixture(scope="session")
+def sudoku_board_json_file(tmp_path_factory, sample_sudoku_board):
+    """
+    Generates a JSON file that contains a sample Sudoku board
+    """
+
+    fn = tmp_path_factory.mktemp("sudoku_data") / "board.json"
+
+    fn.write_text(json.dumps({"board": sample_sudoku_board}))
+
+    return fn
+```
+
+And you can just use it like a fixture as shown in the following example:
+
+```python
+def test_open_sudoku_json(sudoku_board_json_file, sample_sudoku_board):
+    """
+    Tests open_sudoku_json correctly loads a Sudoku board from a JSON file
+    and returns the board
+    """
+
+    loaded_board = open_sudoku_json(sudoku_board_json_file)
+
+    assert loaded_board == sample_sudoku_board
+```
+
 ## Reference
 
 * [Image Thresholding ](https://opencv24-python-tutorials.readthedocs.io/en/latest/py_tutorials/py_imgproc/py_thresholding/py_thresholding.html)
