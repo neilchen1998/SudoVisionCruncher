@@ -3,7 +3,7 @@ import pytest
 
 from src.board_io import save_sudoku_json, open_sudoku_json
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def sample_sudoku_board():
     """
     Generates a valid 9x9 Sudoku board
@@ -21,7 +21,22 @@ def sample_sudoku_board():
         [3, 4, 5, 2, 8, 6, 1, 7, 9],
     ]
 
+@pytest.fixture(scope="session")
+def sudoku_board_json_file(tmp_path_factory, sample_sudoku_board):
+    """
+    Generates a JSON file that contains a sample Sudoku board
+    """
+
+    fn = tmp_path_factory.mktemp("sudoku_data") / "board.json"
+
+    fn.write_text(json.dumps({"board": sample_sudoku_board}))
+
+    return fn
+
 def test_save_sudoku_json(tmp_path, sample_sudoku_board):
+    """
+    Tests save_sudoku_json correctly saves a Sudoku board to a JSON file
+    """
 
     test_file = tmp_path / "test_sudoku.json"
 
@@ -36,13 +51,13 @@ def test_save_sudoku_json(tmp_path, sample_sudoku_board):
 
     assert save_data == {"board": sample_sudoku_board}
 
-def test_open_sudoku_json(tmp_path, sample_sudoku_board):
+def test_open_sudoku_json(sudoku_board_json_file, sample_sudoku_board):
+    """
+    Tests open_sudoku_json correctly loads a Sudoku board from a JSON file
+    and returns the board
+    """
 
-    # Create a JSON file
-    test_file = tmp_path / "test_sudoku.json"
-    test_file.write_text(json.dumps({"board": sample_sudoku_board}))
-
-    loaded_board = open_sudoku_json(str(test_file))
+    loaded_board = open_sudoku_json(sudoku_board_json_file)
 
     assert loaded_board == sample_sudoku_board
 
