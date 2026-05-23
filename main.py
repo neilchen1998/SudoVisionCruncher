@@ -11,10 +11,16 @@ from src.digit_predict import load_model
 from src.parse_sudoku_board import flatten_board, parse_sudoku_board
 from src.solver import solve_sudoku
 
-def print_board(board):
-    width = 3  # adjust for spacing
+def print_board(board: list[list], width:int = 3):
+    """
+    Prints the Sudoku board
 
-    # top border
+    Args:
+        board: The Sudoku board
+        width: The width of each digit in character
+    """
+
+    # The top border
     print("+" + ("-" * (width + 2) + "+") * len(board[0]))
 
     for row in board:
