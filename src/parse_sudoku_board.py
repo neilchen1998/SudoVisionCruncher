@@ -1,7 +1,6 @@
 import cv2
+import keras
 import numpy as np
-
-from src.digit_predict import load_model
 
 def flatten_board(img, N=450) -> np.ndarray:
 
@@ -155,7 +154,7 @@ def is_valid_sudoku(board: list[list[int]]) -> bool:
 
     return True
 
-def parse_sudoku_board(board: np.ndarray, model_path: str) -> list[list[int]] | None:
+def parse_sudoku_board(board: np.ndarray, model: keras.Model) -> list[list[int]]:
 
     """
     Parse a 9x9 grid image into a 2D list of predicted digits using OCR
@@ -176,25 +175,30 @@ def parse_sudoku_board(board: np.ndarray, model_path: str) -> list[list[int]] | 
     THRESH_BLOCK_SIZE = 11
     THRESH_C = 2
 
-    grid = []
-
     # Find the size of the cell
     cell_size = board.shape[0] // 9
 
-    # Load the model for OCR
-    model = load_model(model_path)
+    # For batch prediction
+    batch_inputs = []
+
+    # For reconstruction
+    positions = []
+
+    # Create a grid with all 0
+    grid = [[0 for _ in range(9)] for _ in range(9)]
 
     for r in range(9):
-        row = []
         for c in range(9):
 
             # Crop the cell
             x1, y1 = c * cell_size, r * cell_size
             x2, y2 = x1 + cell_size, y1 + cell_size
+
             cell = board[y1:y2, x1:x2]
 
             # Remove the outer margin to avoid boarders
             margin = int(cell_size * MARGIN_RATIO)
+
             cell = cell[
                 margin:cell_size-margin,
                 margin:cell_size-margin
@@ -213,6 +217,7 @@ def parse_sudoku_board(board: np.ndarray, model_path: str) -> list[list[int]] | 
 
             # Remove noises by using a 2x2 kernel
             kernel = np.ones((2, 2), np.uint8)
+
             thresh = cv2.morphologyEx(
                 thresh,
                 cv2.MORPH_OPEN,
@@ -228,7 +233,6 @@ def parse_sudoku_board(board: np.ndarray, model_path: str) -> list[list[int]] | 
 
             # If there is no contour, then we deduce the current cell is blank
             if len(contours) == 0:
-                row.append(0)
                 continue
 
             # Find the largest area
@@ -237,7 +241,6 @@ def parse_sudoku_board(board: np.ndarray, model_path: str) -> list[list[int]] | 
 
             # If the largest area is less than a threshold, then it must be a noise or an artifact
             if area < MIN_DIGIT_AREA:
-                row.append(0)
                 continue
 
             # Crop the digit
@@ -252,7 +255,10 @@ def parse_sudoku_board(board: np.ndarray, model_path: str) -> list[list[int]] | 
             resized_digit = cv2.resize(digit, (new_w, new_h))
 
             # Put the digit in the center of a 28x28 canvas
-            canvas = np.zeros((MODEL_INPUT_SIZE, MODEL_INPUT_SIZE), dtype=np.uint8)
+            canvas = np.zeros(
+                (MODEL_INPUT_SIZE, MODEL_INPUT_SIZE),
+                dtype=np.uint8
+            )
             x_offset = (MODEL_INPUT_SIZE - new_w) // 2
             y_offset = (MODEL_INPUT_SIZE - new_h) // 2
             canvas[
@@ -260,29 +266,34 @@ def parse_sudoku_board(board: np.ndarray, model_path: str) -> list[list[int]] | 
                 x_offset:x_offset+new_w
             ] = resized_digit
 
-            # Normalize the input to the model
+            # Normalize
             cell_input = (
-                canvas
-                .reshape(1, MODEL_INPUT_SIZE, MODEL_INPUT_SIZE, 1)
-                .astype("float32") / 255.0
+                canvas.astype("float32") / 255.0
             )
 
-            # Predict the digit
-            predictions = model.predict(cell_input, verbose=0)
-            predicted_digit = np.argmax(predictions, axis=-1)[0]
+            batch_inputs.append(cell_input)
+            positions.append((r, c))
 
-            row.append(int(predicted_digit))
+    # Batch prediction
+    if batch_inputs:
 
-        grid.append(row)
+        # Reshape inputs into a numpy array
+        batch_array = np.array(batch_inputs).reshape(
+            -1, # the original shape
+            MODEL_INPUT_SIZE,
+            MODEL_INPUT_SIZE,
+            1
+        )
 
-    # Check the number of cells is correct
-    for row in grid:
-        if len(row) != 9:
-            raise ValueError("The number of cells in #{} is incorrect")
+        # Predict the digits in a single batch
+        predictions = model.predict(batch_array, verbose=0)
+        predicted_digits = np.argmax(predictions, axis=1)
 
-    if len(grid) != 9:
-        raise ValueError("The number of rows is incorrect")
+        # Put the prediction results back into grid
+        for (r, c), digit in zip(positions, predicted_digits):
+            grid[r][c] = int(digit)
 
+    # Validation
     if not is_valid_sudoku(grid):
         raise ValueError("Invalid Sudoku grid")
 
