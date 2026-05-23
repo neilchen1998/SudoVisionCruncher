@@ -155,7 +155,7 @@ def is_valid_sudoku(board: list[list[int]]) -> bool:
 
     return True
 
-def parse_sudoku_board(board: np.ndarray, model_path: str) -> list[list[int]]:
+def parse_sudoku_board(board: np.ndarray, model_path: str) -> list[list[int]] | None:
 
     """
     Parse a 9x9 grid image into a 2D list of predicted digits using OCR
@@ -168,6 +168,14 @@ def parse_sudoku_board(board: np.ndarray, model_path: str) -> list[list[int]]:
         A 9x9 list of integers representing the detected digits
     """
 
+    # Parameters
+    MARGIN_RATIO = 0.1
+    MIN_DIGIT_AREA = 80
+    MODEL_INPUT_SIZE = 28
+    DIGIT_TARGET_SIZE = 18
+    THRESH_BLOCK_SIZE = THRESH_BLOCK_SIZE
+    THRESH_C = 2
+
     grid = []
 
     # Find the size of the cell
@@ -176,7 +184,6 @@ def parse_sudoku_board(board: np.ndarray, model_path: str) -> list[list[int]]:
     # Load the model for OCR
     model = load_model(model_path)
 
-    idx = 0
     for r in range(9):
         row = []
         for c in range(9):
@@ -187,7 +194,7 @@ def parse_sudoku_board(board: np.ndarray, model_path: str) -> list[list[int]]:
             cell = board[y1:y2, x1:x2]
 
             # Remove the outer margin to avoid boarders
-            margin = int(cell_size * 0.1)
+            margin = int(cell_size * MARGIN_RATIO)
             cell = cell[
                 margin:cell_size-margin,
                 margin:cell_size-margin
@@ -200,8 +207,8 @@ def parse_sudoku_board(board: np.ndarray, model_path: str) -> list[list[int]]:
                 255,
                 cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                 cv2.THRESH_BINARY_INV,
-                blockSize=11,
-                C=2
+                blockSize=THRESH_BLOCK_SIZE,
+                C=THRESH_C
             )
 
             # Remove noises by using a 2x2 kernel
@@ -222,7 +229,6 @@ def parse_sudoku_board(board: np.ndarray, model_path: str) -> list[list[int]]:
             # If there is no contour, then we deduce the current cell is blank
             if len(contours) == 0:
                 row.append(0)
-                idx += 1
                 continue
 
             # Find the largest area
@@ -230,27 +236,25 @@ def parse_sudoku_board(board: np.ndarray, model_path: str) -> list[list[int]]:
             area = cv2.contourArea(largest)
 
             # If the largest area is less than a threshold, then it must be a noise or an artifact
-            if area < 80:
+            if area < MIN_DIGIT_AREA:
                 row.append(0)
-                idx += 1
                 continue
 
             # Crop the digit
             x, y, w, h = cv2.boundingRect(largest)
             digit = thresh[y:y+h, x:x+w]
 
-            # Resize the digit but also preserve the aspect
-            target_size = 18 # digits in TMNIST used for training take up a large chunk of the canvas
+            # Resize the digit to DIGIT_TARGET_SIZE but also preserve the aspect
             h_digit, w_digit = digit.shape
-            scale = target_size / max(h_digit, w_digit)
+            scale = DIGIT_TARGET_SIZE / max(h_digit, w_digit)
             new_w = int(w_digit * scale)
             new_h = int(h_digit * scale)
             resized_digit = cv2.resize(digit, (new_w, new_h))
 
             # Put the digit in the center of a 28x28 canvas
-            canvas = np.zeros((28, 28), dtype=np.uint8)
-            x_offset = (28 - new_w) // 2
-            y_offset = (28 - new_h) // 2
+            canvas = np.zeros((MODEL_INPUT_SIZE, MODEL_INPUT_SIZE), dtype=np.uint8)
+            x_offset = (MODEL_INPUT_SIZE - new_w) // 2
+            y_offset = (MODEL_INPUT_SIZE - new_h) // 2
             canvas[
                 y_offset:y_offset+new_h,
                 x_offset:x_offset+new_w
@@ -259,7 +263,7 @@ def parse_sudoku_board(board: np.ndarray, model_path: str) -> list[list[int]]:
             # Normalize the input to the model
             cell_input = (
                 canvas
-                .reshape(1, 28, 28, 1)
+                .reshape(1, MODEL_INPUT_SIZE, MODEL_INPUT_SIZE, 1)
                 .astype("float32") / 255.0
             )
 
@@ -268,8 +272,6 @@ def parse_sudoku_board(board: np.ndarray, model_path: str) -> list[list[int]]:
             predicted_digit = np.argmax(predictions, axis=-1)[0]
 
             row.append(int(predicted_digit))
-
-            idx += 1
 
         grid.append(row)
 
