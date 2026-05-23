@@ -3,7 +3,7 @@ import numpy as np
 import os
 import tensorflow as tf
 
-def load_model(model_path: str) -> tf.keras.Model:
+def load_model(model_path: str, verbose=0) -> tf.keras.Model:
     """
     Loads the tensorflow model
 
@@ -20,7 +20,8 @@ def load_model(model_path: str) -> tf.keras.Model:
     try:
         model = tf.keras.models.load_model(model_path)
 
-        print("Model loaded successfully!")
+        if verbose > 0:
+            print("Model loaded successfully!")
         return model
 
     except Exception as e:
