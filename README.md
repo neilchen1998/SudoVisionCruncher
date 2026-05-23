@@ -224,6 +224,13 @@ cell_input = (
 
 Voilà, now we have prepared the cell for our OCR and we can use the pretrained model to figure out the digit of the cell.
 
+## Temp Path
+
+*tmp_path* is a function provided by **Pytest** that generates a temporary directory unique to each test function.
+
+*tmp_path_factory* is a session-scoped fixture which can be used to create arbitrary temporary directories from any other fixture or test
+
+
 ## Reference
 
 * [Image Thresholding ](https://opencv24-python-tutorials.readthedocs.io/en/latest/py_tutorials/py_imgproc/py_thresholding/py_thresholding.html)
