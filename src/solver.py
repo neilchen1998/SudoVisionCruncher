@@ -59,33 +59,37 @@ def solve_sudoku(board: list[list]) -> list[list]:
         r, c = empties[i]
         b = box_index(r, c)
 
-        # Get the used numbers in a bitmask format
-        used = rows[r] | cols[c] | boxes[b]
+        # Get the valid numbers in a bitmask format
+        # NOTE: 0x3FE represents 0b1111111110
+        candidates = (~(rows[r] | cols[c] | boxes[b])) & 0x3FE
 
         # Loop through all the options
-        for num in range(1, 10):
+        while candidates:
 
-            # Convert the digit into bit format
-            bit = 1 << num
+            # Grab the lowest 1 bit
+            bit = candidates & -candidates
 
-            # Check if the digit is available
-            if used & bit == 0:
+            # Convert it to number (decimal)
+            num = bit.bit_length() - 1
 
-                # Place the digit
-                board[r][c] = num
-                rows[r] |= bit
-                cols[c] |= bit
-                boxes[b] |= bit
+            # Place the digit
+            board[r][c] = num
+            rows[r] |= bit
+            cols[c] |= bit
+            boxes[b] |= bit
 
-                # Backtrack the next index
-                if backtrack(i + 1):
-                    return True
+            # Backtrack the next index
+            if backtrack(i + 1):
+                return True
 
-                # Undo
-                board[r][c] = 0
-                rows[r] ^= bit
-                cols[c] ^= bit
-                boxes[b] ^= bit
+            # Undo
+            board[r][c] = 0
+            rows[r] ^= bit
+            cols[c] ^= bit
+            boxes[b] ^= bit
+
+            # Clear the bit that we just ran and move to the next candidate
+            candidates &= candidates - 1
 
         # If we reach here that means we have exhausted all the possibilities and the puzzle cannot be solved
         return False
