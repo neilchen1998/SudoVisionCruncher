@@ -67,7 +67,7 @@ def flatten_board(img, N=450) -> np.ndarray:
         ret[2] = pts[np.argmax(s)]
 
         # Calculate the differences row-wise
-        diff = np.diff(pts, axis=1).ravel()
+        diff = np.diff(pts, axis=1)
 
         # The top-right vertex has the smallest value
         # The bottom-left vertex has the largest value
