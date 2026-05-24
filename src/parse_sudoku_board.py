@@ -93,7 +93,7 @@ def flatten_board(img, N=450) -> np.ndarray:
     # Wrap the original image to get the final flat square
     flat_board = cv2.warpPerspective(grey, M, (N, N))
 
-    return flat_board
+    return flat_board, M
 
 def is_valid_sudoku(board: list[list[int]]) -> bool:
     """
@@ -154,8 +154,7 @@ def is_valid_sudoku(board: list[list[int]]) -> bool:
 
     return True
 
-def parse_sudoku_board(board: np.ndarray, model: keras.Model) -> list[list[int]]:
-
+def parse_sudoku_board(board: np.ndarray, model: keras.Model) -> tuple[list[list[int]], list[tuple[int, int]]]:
     """
     Parse a 9x9 grid image into a 2D list of predicted digits using OCR
 
@@ -164,7 +163,9 @@ def parse_sudoku_board(board: np.ndarray, model: keras.Model) -> list[list[int]]
         model_path: Path to the pre-trained OCR model
 
     Returns:
-        A 9x9 list of integers representing the detected digits
+        tuple:
+            list[list[int]]: A 9x9 list of integers representing the detected digits
+            list[tuple[int, int]]: A list of coordinates of empty positions
     """
 
     # Parameters
@@ -186,6 +187,9 @@ def parse_sudoku_board(board: np.ndarray, model: keras.Model) -> list[list[int]]
 
     # Create a grid with all 0
     grid = [[0 for _ in range(9)] for _ in range(9)]
+
+    # Empty positions
+    empty_positions = []
 
     for r in range(9):
         for c in range(9):
@@ -233,6 +237,7 @@ def parse_sudoku_board(board: np.ndarray, model: keras.Model) -> list[list[int]]
 
             # If there is no contour, then we deduce the current cell is blank
             if len(contours) == 0:
+                empty_positions.append((r, c))
                 continue
 
             # Find the largest area
@@ -241,6 +246,7 @@ def parse_sudoku_board(board: np.ndarray, model: keras.Model) -> list[list[int]]
 
             # If the largest area is less than a threshold, then it must be a noise or an artifact
             if area < MIN_DIGIT_AREA:
+                empty_positions.append((r, c))
                 continue
 
             # Crop the digit
@@ -297,4 +303,4 @@ def parse_sudoku_board(board: np.ndarray, model: keras.Model) -> list[list[int]]
     if not is_valid_sudoku(grid):
         raise ValueError("Invalid Sudoku grid")
 
-    return grid
+    return grid, empty_positions
