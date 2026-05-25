@@ -55,26 +55,24 @@ def main():
 
     board, empty_positions = parse_sudoku_board(flatten_img, model)
 
-    print_board(board)
+    solved_board = solve_sudoku(board)
 
-    # solved_board = solve_sudoku(board)
+    overlay = draw_solution_overlay(
+        solved_board,
+        empty_positions
+    )
 
-    # overlay = draw_solution_overlay(
-    #     solved_board,
-    #     empty_positions
-    # )
+    result = project_overlay_back(
+        img,
+        overlay,
+        M
+    )
 
-    # result = project_overlay_back(
-    #     img,
-    #     overlay,
-    #     M
-    # )
-
-    # # Display the image
-    # plt.imshow(result)
-    # plt.axis('off')
-    # plt.title("Solved Sudoku")
-    # plt.show()
+    # Display the image
+    plt.imshow(result)
+    plt.axis('off')
+    plt.title("Solved Sudoku")
+    plt.show()
 
     return
 
