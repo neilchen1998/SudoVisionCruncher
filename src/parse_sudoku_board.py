@@ -67,7 +67,7 @@ def flatten_board(img, N=450) -> np.ndarray:
         ret[2] = pts[np.argmax(s)]
 
         # Calculate the differences row-wise
-        diff = np.diff(pts, axis=1).ravel()
+        diff = np.diff(pts, axis=1)
 
         # The top-right vertex has the smallest value
         # The bottom-left vertex has the largest value
@@ -168,8 +168,7 @@ def parse_sudoku_board(board: np.ndarray, model: keras.Model) -> list[list[int]]
     """
 
     # Parameters
-    MARGIN_RATIO = 0.1
-    MIN_DIGIT_AREA = 80
+    MARGIN_RATIO = 0.2
     MODEL_INPUT_SIZE = 28
     DIGIT_TARGET_SIZE = 18
     THRESH_BLOCK_SIZE = 11
@@ -193,21 +192,22 @@ def parse_sudoku_board(board: np.ndarray, model: keras.Model) -> list[list[int]]
             # Crop the cell
             x1, y1 = c * cell_size, r * cell_size
             x2, y2 = x1 + cell_size, y1 + cell_size
-
             cell = board[y1:y2, x1:x2]
 
             # Remove the outer margin to avoid boarders
             margin = int(cell_size * MARGIN_RATIO)
-
             cell = cell[
                 margin:cell_size-margin,
                 margin:cell_size-margin
             ]
 
+            # Blur the image
+            blur = cv2.GaussianBlur(cell, (3, 3), 0)
+
             # Use adaptive threshold
             # NOTE: block size should be an odd number
             thresh = cv2.adaptiveThreshold(
-                cell,
+                blur,
                 255,
                 cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                 cv2.THRESH_BINARY_INV,
@@ -217,7 +217,6 @@ def parse_sudoku_board(board: np.ndarray, model: keras.Model) -> list[list[int]]
 
             # Remove noises by using a 2x2 kernel
             kernel = np.ones((2, 2), np.uint8)
-
             thresh = cv2.morphologyEx(
                 thresh,
                 cv2.MORPH_OPEN,
@@ -240,18 +239,26 @@ def parse_sudoku_board(board: np.ndarray, model: keras.Model) -> list[list[int]]
             area = cv2.contourArea(largest)
 
             # If the largest area is less than a threshold, then it must be a noise or an artifact
-            if area < MIN_DIGIT_AREA:
+            cell_area = cell.shape[0] * cell.shape[1]
+            min_area_threshold = cell_area * 0.01
+            if area < min_area_threshold:
+                continue
+
+            # Find the bounding box that bounds the digit
+            x, y, w, h = cv2.boundingRect(largest)
+
+            # If the bounding box is small that means there is no digit to crop
+            if w == 0 or h == 0:
                 continue
 
             # Crop the digit
-            x, y, w, h = cv2.boundingRect(largest)
             digit = thresh[y:y+h, x:x+w]
 
             # Resize the digit to DIGIT_TARGET_SIZE but also preserve the aspect
             h_digit, w_digit = digit.shape
             scale = DIGIT_TARGET_SIZE / max(h_digit, w_digit)
-            new_w = int(w_digit * scale)
-            new_h = int(h_digit * scale)
+            new_w = max(1, int(w_digit * scale))
+            new_h = max(1, int(h_digit * scale))
             resized_digit = cv2.resize(digit, (new_w, new_h))
 
             # Put the digit in the center of a 28x28 canvas
