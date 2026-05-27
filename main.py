@@ -69,7 +69,7 @@ def main():
     )
 
     # Display the image
-    plt.imshow(result)
+    plt.imshow(cv2.cvtColor(result, cv2.COLOR_BGR2RGB)) # NOTE: OpenCV uses BGR but matplotlib uses RGB
     plt.axis('off')
     plt.title("Solved Sudoku")
     plt.show()
