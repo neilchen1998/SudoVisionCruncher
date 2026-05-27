@@ -1,14 +1,17 @@
 import cv2
 import numpy as np
 
-def draw_solution_overlay(solved_board, empty_positions: list[tuple[int, int]], board_size:int = 450) -> np.ndarray:
+def render_solution_overlay(solved_board: list[list[int]], empty_positions: list[tuple[int, int]],
+                            board_size:int = 450, FONT_FACE:int = cv2.FONT_HERSHEY_SCRIPT_SIMPLEX,FONT_SCALE:float = 1.2, THICKNESS:int = 2) -> np.ndarray:
     """
-    Draws the solution on the given image
+    Renders the solution on the given image
 
     Args:
         solved_board: The solved Sudoku board
         empty_positions: A list of coordinates that represent empty cells
         board_size: The size of the board (default is 450)
+        FONT_SCALE: The scale of the font (default to 1.2)
+        THICKNESS: The thickness of the font (default to 2.0)
 
     Returns:
         np.ndarray: The overlay image
@@ -25,25 +28,34 @@ def draw_solution_overlay(solved_board, empty_positions: list[tuple[int, int]], 
         x = c * cell_size
         y = r * cell_size
 
-        text_x = x + cell_size // 4
-        text_y = y + int(cell_size * 0.75)
+        # Find the width and the height of the text based on the font, scale, etc.
+        (text_w, text_h), _ = cv2.getTextSize(
+            digit,
+            FONT_FACE,
+            FONT_SCALE,
+            THICKNESS,
+        )
+
+        # Find the text position by centering the text within the box using half the text width and height offsets
+        text_x = x + (cell_size - text_w) // 2
+        text_y = y + (cell_size + text_h) // 2
 
         cv2.putText(
             overlay,
             digit,
             (text_x, text_y),
-            cv2.FONT_HERSHEY_SCRIPT_SIMPLEX,
-            1.2,    # the font scale factor
-            (255, 0, 0),    # red
-            2,  # the thickness of the lines
+            FONT_FACE,
+            FONT_SCALE,
+            (0, 0, 255),    # (B, G, R)
+            THICKNESS,
             cv2.LINE_AA # anti-aliased line type.
         )
 
     return overlay
 
-def project_overlay_back(img: np.ndarray, overlay: np.ndarray, M: np.ndarray) -> np.ndarray:
+def overlay_solution_on_board(img: np.ndarray, overlay: np.ndarray, M: np.ndarray) -> np.ndarray:
     """
-    Warp the solved overlay back onto the original image
+    Overlays the solution back onto the original image
 
     Args:
         img: The original Sudoku board image

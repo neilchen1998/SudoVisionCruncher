@@ -57,12 +57,12 @@ def main():
 
     solved_board = solve_sudoku(board)
 
-    overlay = draw_solution_overlay(
+    overlay = render_solution_overlay(
         solved_board,
         empty_positions
     )
 
-    result = project_overlay_back(
+    result = overlay_solution_on_board(
         img,
         overlay,
         M
