@@ -282,6 +282,13 @@ mask_inv = cv2.bitwise_not(mask)
 background = cv2.bitwise_and(img, img, mask=mask_inv)
 ```
 
+Finally, we can just combine the foreground with the background and get an image that contains the original Sudoku board and the solution.
+
+```python
+# Combine the background and the foreground
+result = cv2.add(background, foreground)
+```
+
 ## Temp Path & Temp Path Factory
 
 *tmp_path* is a function provided by **Pytest** that generates a temporary directory unique to each test function.
