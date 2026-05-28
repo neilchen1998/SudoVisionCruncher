@@ -248,6 +248,40 @@ predictions = model.predict(batch_array, verbose=0)
 predicted_digits = np.argmax(predictions, axis=1)
 ```
 
+## Overlay Solutions
+
+One key part is to overlay the solution of the Sudoku puzzle on the original image.
+We can achieve this by creating a **foreground** image that contains the solution without the original hints and overlaying it on the **background** image that masked out the empty grids.
+
+We had created the foreground image in the previous step and now we need to first transform the foreground with the inverse of the perspective matrix that we used to transform the input image. Remember that the perspective matrix is that matrix that helps to transform the input image to the top-down-view. Therefore, we need to use the inverse of it to transfer back to its original perspective. Luckily, we can use *np.linalg.inv* to calculate it easily.
+
+Then we can call *cv2.warpPerspective* to transform the foreground image to the same perspective as the original input image, which we will use to make the background.
+
+Then we need to create a mask to mask out the empty cells to create the foreground.
+We first convert the overlay image into a grey image.
+Then we set pixels that are not black ($\geq 10$) to white ($255$) and near black ($< 10$) to black.
+NOTE: The dark part of the mask blocks the pixels. So in this case we will apply **mask** to the foreground and create an inverted mask (**mask_inv**) for the background.
+
+```python
+# Create a mask that for the foreground image
+grey = cv2.cvtColor(warped_overlay, cv2.COLOR_BGR2GRAY)
+_, mask = cv2.threshold(grey, 10, 255, cv2.THRESH_BINARY)
+
+# Keep the cells that contain the solution
+foreground = cv2.bitwise_and(warped_overlay, warped_overlay, mask=mask)
+```
+
+Then, we create the inverted mask that will filter out empty cells to create the background.
+NOTE: *cv2.bitwise_and* takes two images therefore we need to pass **img** twice even we are just performing the operation on **img** itself. We are more like applying the mask other than doing a bitwise operation.
+
+```python
+# Create a mask that filters out the empty cells
+mask_inv = cv2.bitwise_not(mask)
+
+# Remove empty cells for the solution from the original image with the mask
+background = cv2.bitwise_and(img, img, mask=mask_inv)
+```
+
 ## Temp Path & Temp Path Factory
 
 *tmp_path* is a function provided by **Pytest** that generates a temporary directory unique to each test function.

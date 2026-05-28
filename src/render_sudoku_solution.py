@@ -75,16 +75,18 @@ def overlay_solution_on_board(img: np.ndarray, overlay: np.ndarray, M: np.ndarra
     # Transform the overlay image so that it will fit into the background image (the original image)
     warped_overlay = cv2.warpPerspective(overlay, M_inv, (w, h))
 
-    # Create a mask that will cut holes in the background image for the foreground image
+    # Create a mask that for the foreground image
     grey = cv2.cvtColor(warped_overlay, cv2.COLOR_BGR2GRAY)
     _, mask = cv2.threshold(grey, 10, 255, cv2.THRESH_BINARY)
+
+    # Keep the cells that contain the solution
+    foreground = cv2.bitwise_and(warped_overlay, warped_overlay, mask=mask)
+
+    # Create a mask that filters out the empty cells
     mask_inv = cv2.bitwise_not(mask)
 
-    # Remove cells for the solution from the original image
+    # Remove empty cells for the solution from the original image with the mask
     background = cv2.bitwise_and(img, img, mask=mask_inv)
-
-    # Keep overlay
-    foreground = cv2.bitwise_and(warped_overlay, warped_overlay, mask=mask)
 
     # Combine the background and the foreground
     result = cv2.add(background, foreground)
