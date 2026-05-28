@@ -9,6 +9,7 @@ from pathlib import Path
 
 from src.digit_predict import load_model
 from src.parse_sudoku_board import flatten_board, parse_sudoku_board
+from src.render_sudoku_solution import *
 from src.solver import solve_sudoku
 
 def print_board(board: list[list], width:int = 3):
@@ -50,15 +51,28 @@ def main():
 
     # Import the image and turn into grey scale
     img = cv2.imread(args.image_path)
-    flatten_img = flatten_board(img)
+    flatten_img, M = flatten_board(img)
 
-    board = parse_sudoku_board(flatten_img, model)
+    board, empty_positions = parse_sudoku_board(flatten_img, model)
 
-    # print_board(board)
+    solved_board = solve_sudoku(board)
 
-    solved = solve_sudoku(board)
+    overlay = render_solution_overlay(
+        solved_board,
+        empty_positions
+    )
 
-    print_board(solved)
+    result = overlay_solution_on_board(
+        img,
+        overlay,
+        M
+    )
+
+    # Display the image
+    plt.imshow(cv2.cvtColor(result, cv2.COLOR_BGR2RGB)) # NOTE: OpenCV uses BGR but matplotlib uses RGB
+    plt.axis('off')
+    plt.title("Solved Sudoku")
+    plt.show()
 
     return
 
