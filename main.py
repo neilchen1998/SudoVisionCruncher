@@ -44,6 +44,7 @@ def main():
     # Optional argument(s)
     parser.add_argument("-m", "--model-path", type=Path, default=MODEL_PATH, help="The file path of the OCR model")
     parser.add_argument("-V", "--verbose", action="store_true", default=False, help="Print the pipeline profile summary")
+    parser.add_argument("--output", "-o", help="The output path", default=None)
 
     # Parse the arguments
     args = parser.parse_args()
@@ -113,11 +114,17 @@ def main():
     if args.verbose:
         profiler.report()
 
-    # Display the image
-    plt.imshow(cv2.cvtColor(result, cv2.COLOR_BGR2RGB)) # NOTE: OpenCV uses BGR but matplotlib uses RGB
-    plt.axis('off')
-    plt.title("Solved Sudoku")
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.imshow(cv2.cvtColor(result, cv2.COLOR_BGR2RGB))  # NOTE: OpenCV uses BGR but matplotlib uses RGB
+    ax.set_title("Solved Sudoku", pad=2)
+    ax.axis('off')
+
+    plt.tight_layout(pad=1.0)
     plt.show()
+
+    if args.output:
+        resized_result = cv2.resize(result, (350, 350))
+        cv2.imwrite(f"{args.output}", resized_result)
 
     return
 
