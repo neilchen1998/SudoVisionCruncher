@@ -3,6 +3,16 @@ from time import perf_counter
 from typing import Any
 
 class PipelineProfiler:
+    """
+    Records execution times for named stages in a processing pipeline
+
+    Example:
+        profiler = PipelineProfiler()
+
+        model = profiler.profile("Load model", load_model, model_path)
+
+        profiler.report()
+    """
 
     def __init__(self) -> None:
         self.timings: dict[str, float] = {}

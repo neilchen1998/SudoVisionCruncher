@@ -346,6 +346,91 @@ def test_open_sudoku_json(sudoku_board_json_file, sample_sudoku_board):
     assert loaded_board == sample_sudoku_board
 ```
 
+## Profiler
+
+There are several stages in our pipeline, and we would like to measure how long does each stage take.
+One way of doing this is to create a profiler class that takes a callable function and arguments and time it.
+
+```python
+class PipelineProfiler:
+    """
+    Records execution times for named stages in a processing pipeline
+
+    Example:
+        profiler = PipelineProfiler()
+
+        model = profiler.profile("Load model", load_model, model_path)
+
+        profiler.report()
+    """
+
+def __init__(self) -> None:
+    self.timings: dict[str, float] = {}
+
+def profile(self, name:str, fn: Callable[..., Any], *args, **kwargs) -> Any:
+    """
+    Executes a callable function and records its execution time
+
+    Args:
+        name: The human-readable name of the pipeline
+        fn: The callable function
+        *args: Positional arguments passed to the callable function
+        **kwargs: Keyword arguments passed to the callable function
+
+    Return:
+        The return values from the callable function
+    """
+
+    start = perf_counter()
+    result = fn(*args, **kwargs)
+    self.timings[name] = perf_counter() - start
+    return result
+
+def report(self):
+    """
+    Prints the summary report of recorded execution times
+    """
+
+    # Calculate the total time
+    total = sum(self.timings.values())
+
+    print("\n======= Pipeline Profile =======")
+
+    for name, t in self.timings.items():
+        pct = t / total * 100
+        print(f"{name:<20}{t:>10.3f}s ({pct:>2.1f}%)")
+
+    print(f"\tTotal time elapsed: {total:.3f}s")
+
+def get_report(self) -> dict[str, float]:
+    """
+    Gets a copy of the report
+
+    Return:
+        dict[str, flooat]: A dictionary with the function name as the key and its execution time as the value
+    """
+
+    return self.timings.copy()
+```
+
+We first need to create an instance of this class and we can pass the callable functions into this instance with *profile()*.
+We can then pass the name of the current stage, the callable function, and the arguments to it just like how we normally call a function.
+*profile()* will store the elapsed time in its dictionary and then show the result when we call *report()* after the pipeline is completed.
+
+An example output:
+
+```zsh
+======= Pipeline Profile =======
+Load model               0.169s (59.4%)
+Read image               0.006s (2.2%)
+Flatten board            0.009s (3.1%)
+OCR                      0.094s (33.0%)
+Solve Sudoku             0.004s (1.4%)
+Render overlay           0.001s (0.4%)
+Project overlay          0.002s (0.6%)
+        Total time elapsed: 0.284s
+```
+
 ## Reference
 
 * [Image Thresholding ](https://opencv24-python-tutorials.readthedocs.io/en/latest/py_tutorials/py_imgproc/py_thresholding/py_thresholding.html)
