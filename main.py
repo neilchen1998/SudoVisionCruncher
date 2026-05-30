@@ -9,6 +9,7 @@ from pathlib import Path
 
 from src.digit_predict import load_model
 from src.parse_sudoku_board import flatten_board, parse_sudoku_board
+from src.profiler import PipelineProfiler
 from src.render_sudoku_solution import *
 from src.solver import solve_sudoku
 
@@ -42,6 +43,7 @@ def main():
 
     # Optional argument(s)
     parser.add_argument("-m", "--model-path", type=Path, default=MODEL_PATH, help="The file path of the OCR model")
+    parser.add_argument("-V", "--verbose", action="store_true", default=False, help="Print the pipeline profile summary")
 
     # Parse the arguments
     args = parser.parse_args()
@@ -53,24 +55,63 @@ def main():
     if not args.model_path.exists():
         parser.error(f"Model not found: {args.model_path}")
 
+    profiler = PipelineProfiler()
+
     # Load the model
-    model = load_model(str(args.model_path))
+    model = profiler.profile(
+        "Load model",
+        load_model,
+        str(args.model_path)
+    )
 
     # Import the image and turn into grey scale
-    img = cv2.imread(str(args.image_path))
-    flatten_img, M = flatten_board(img)
+    img = profiler.profile(
+        "Read image",
+        cv2.imread,
+        str(args.image_path)
+    )
+
+    flatten_img, M = profiler.profile(
+        "Flatten board",
+        flatten_board,
+        img
+    )
 
     # Parse the given Sudoku board
-    board, empty_positions = parse_sudoku_board(flatten_img, model)
+    board, empty_positions = profiler.profile(
+        "OCR",
+        parse_sudoku_board,
+        flatten_img,
+        model
+    )
 
     # Solve the Sudoku board
-    solved_board = solve_sudoku(board)
+    solved_board = profiler.profile(
+        "Solve Sudoku",
+        solve_sudoku,
+        board
+    )
 
     # Render the overlay
-    overlay = render_solution_overlay(solved_board, empty_positions)
+    overlay = profiler.profile(
+        "Render overlay",
+        render_solution_overlay,
+        solved_board,
+        empty_positions
+    )
 
     # Overlay the solution on the original image
-    result = overlay_solution_on_board(img, overlay, M)
+    result = profiler.profile(
+        "Project overlay",
+        overlay_solution_on_board,
+        img,
+        overlay,
+        M
+    )
+
+    # Print the summary report if 'verbose' is provided by the user
+    if args.verbose:
+        profiler.report()
 
     # Display the image
     plt.imshow(cv2.cvtColor(result, cv2.COLOR_BGR2RGB)) # NOTE: OpenCV uses BGR but matplotlib uses RGB
