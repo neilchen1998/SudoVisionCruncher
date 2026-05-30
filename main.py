@@ -38,35 +38,39 @@ def main():
     parser = argparse.ArgumentParser(prog="SudoVisionCruncher", description="Hello, user:")
 
     # Positional argument(s) (require by default)
-    parser.add_argument("image_path", type=str, help="The path of the Sudoku image")
+    parser.add_argument("image_path", type=Path, help="The path of the Sudoku image")
 
     # Optional argument(s)
-    parser.add_argument("-m", "--model-path", type=str, default=MODEL_PATH, help="The file path of the OCR model")
+    parser.add_argument("-m", "--model-path", type=Path, default=MODEL_PATH, help="The file path of the OCR model")
 
     # Parse the arguments
     args = parser.parse_args()
 
+    # Check the paths exist
+    if not args.image_path.exists():
+        parser.error(f"Image not found: {args.image_path}")
+
+    if not args.model_path.exists():
+        parser.error(f"Model not found: {args.model_path}")
+
     # Load the model
-    model = load_model(args.model_path)
+    model = load_model(str(args.model_path))
 
     # Import the image and turn into grey scale
-    img = cv2.imread(args.image_path)
+    img = cv2.imread(str(args.image_path))
     flatten_img, M = flatten_board(img)
 
+    # Parse the given Sudoku board
     board, empty_positions = parse_sudoku_board(flatten_img, model)
 
+    # Solve the Sudoku board
     solved_board = solve_sudoku(board)
 
-    overlay = render_solution_overlay(
-        solved_board,
-        empty_positions
-    )
+    # Render the overlay
+    overlay = render_solution_overlay(solved_board, empty_positions)
 
-    result = overlay_solution_on_board(
-        img,
-        overlay,
-        M
-    )
+    # Overlay the solution on the original image
+    result = overlay_solution_on_board(img, overlay, M)
 
     # Display the image
     plt.imshow(cv2.cvtColor(result, cv2.COLOR_BGR2RGB)) # NOTE: OpenCV uses BGR but matplotlib uses RGB
