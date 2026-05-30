@@ -41,10 +41,22 @@ Deactivate the environment:
 deactivate
 ```
 
-Run the main script:
+Run the main script with default OCR model:
 
 ```zsh
-uv run ./main.py
+uv run ./main.py <sudoku.png>
+```
+
+Run the main script with specific OCR model:
+
+```zsh
+uv run ./main.py <sudoku.png> -m <OCR_model.keras>
+```
+
+Run the main script and store the result:
+
+```zsh
+uv run ./main.py <sudoku.png> -o <output.png>
 ```
 
 Run the **pytest**:
@@ -52,6 +64,32 @@ Run the **pytest**:
 ```zsh
 uv run pytest -o pythonpath=.
 ```
+
+## Example Output
+
+The following shows an example Sudoku input image:
+
+![Sudoku sample](data/sudoku.png)
+
+Run the script with:
+
+```zsh
+uv run ./main.py ./data/sudoku-5.png
+```
+
+A preview window will appear showing the result:
+
+![Sudoku sample result](example/sudoku-5-preview.png)
+
+If you provide the *-o* argument, the result will be saved to the given path in addition to being displayed.
+
+```zsh
+uv run ./main.py ./data/sudoku-4.png -o example/sudoku-4-result.png
+```
+
+Saved output:
+
+![Sudoku sample result](example/sudoku-4-result.png)
 
 ## Pipeline
 
