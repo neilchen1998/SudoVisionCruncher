@@ -1,8 +1,8 @@
 import cv2
-import keras
 import numpy as np
+import tensorflow as tf
 
-def flatten_board(img, N=450) -> tuple[np.ndarray, np.ndarray]:
+def flatten_board(img: np.ndarray, N: int = 450) -> tuple[np.ndarray, np.ndarray]:
 
     """
     Flattens a Sudoku board
@@ -14,6 +14,14 @@ def flatten_board(img, N=450) -> tuple[np.ndarray, np.ndarray]:
     Returns:
         tuple[np.ndarray, np.ndarray]: The flatten board and the perspective transformation matrix
     """
+
+    # Check if the input image is non-empty and an RGB image
+    if img is None or img.size == 0 or img.ndim != 3:
+        raise ValueError("Input image must be a non-emtpy 3-channel RGB image.")
+
+    # Check if the input dimension is bigger than N
+    if img.shape[0] < N or img.shape[1] < N:
+        raise ValueError(f"Input image is smaller than {N}x{N} ({img.shape[0]}x{img.shape[1]}).")
 
     # Turn into grey scale
     grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -154,7 +162,7 @@ def is_valid_sudoku(board: list[list[int]]) -> bool:
 
     return True
 
-def parse_sudoku_board(board: np.ndarray, model: keras.Model) -> tuple[list[list[int]], list[tuple[int, int]]]:
+def parse_sudoku_board(board: np.ndarray, model: tf.keras.Model) -> tuple[list[list[int]], list[tuple[int, int]]]:
     """
     Parse a 9x9 grid image into a 2D list of predicted digits using OCR
 
@@ -307,6 +315,6 @@ def parse_sudoku_board(board: np.ndarray, model: keras.Model) -> tuple[list[list
 
     # Validation
     if not is_valid_sudoku(grid):
-        raise ValueError("Invalid Sudoku grid")
+        raise ValueError("Invalid Sudoku grid: {grid}.")
 
     return grid, empty_positions

@@ -31,4 +31,4 @@ def bgr(name: str) -> tuple[int, int, int]:
             raise ValueError(f"Unknown colour: {name}. Did you mean '{suggestion[0]}'?") from None  # suppresses the original exception
 
         # No suggestion can be found
-        raise ValueError(f"Unknown colour:'{name}'.") from None
+        raise ValueError(f"Unknown colour: '{name}'.") from None
