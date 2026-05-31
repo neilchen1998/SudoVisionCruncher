@@ -2,7 +2,7 @@ import cv2
 import keras
 import numpy as np
 
-def flatten_board(img, N=450) -> np.ndarray:
+def flatten_board(img, N=450) -> tuple[np.ndarray, np.ndarray]:
 
     """
     Flattens a Sudoku board
@@ -12,7 +12,7 @@ def flatten_board(img, N=450) -> np.ndarray:
         N (optional): the size of the board (default to 450 pixels)
 
     Returns:
-        np.ndarray: The flatten board
+        tuple[np.ndarray, np.ndarray]: The flatten board and the perspective transformation matrix
     """
 
     # Turn into grey scale
@@ -77,14 +77,14 @@ def flatten_board(img, N=450) -> np.ndarray:
         return ret
 
     # Get all the vertices
-    vertices = np.float32([vertices[0] for vertices in approx])
+    vertices = np.float32([v[0] for v in approx])
     sorted_vertices = sort_vertices(vertices)
 
     dst_vertices = np.array([
-        [0, 0],                                         # Top-Left destination
-        [N - 1, 0],                     # Top-Right destination
+        [0, 0],         # Top-Left destination
+        [N - 1, 0],     # Top-Right destination
         [N - 1, N - 1], # Bottom-Right destination
-        [0, N - 1]                      # Bottom-Left destination
+        [0, N - 1]      # Bottom-Left destination
     ], dtype="float32")
 
     # Calculate the perspective transform matrix
@@ -160,7 +160,7 @@ def parse_sudoku_board(board: np.ndarray, model: keras.Model) -> tuple[list[list
 
     Args:
         board: A numpy array representing the full board image
-        model_path: Path to the pre-trained OCR model
+        model: The pre-trained OCR Keras model
 
     Returns:
         tuple:
@@ -247,6 +247,7 @@ def parse_sudoku_board(board: np.ndarray, model: keras.Model) -> tuple[list[list
             cell_area = cell.shape[0] * cell.shape[1]
             min_area_threshold = cell_area * 0.01
             if area < min_area_threshold:
+                empty_positions.append((r, c))
                 continue
 
             # Find the bounding box that bounds the digit
@@ -254,6 +255,7 @@ def parse_sudoku_board(board: np.ndarray, model: keras.Model) -> tuple[list[list
 
             # If the bounding box is small that means there is no digit to crop
             if w == 0 or h == 0:
+                empty_positions.append((r, c))
                 continue
 
             # Crop the digit
@@ -279,9 +281,7 @@ def parse_sudoku_board(board: np.ndarray, model: keras.Model) -> tuple[list[list
             ] = resized_digit
 
             # Normalize
-            cell_input = (
-                canvas.astype("float32") / 255.0
-            )
+            cell_input = (canvas.astype("float32") / 255.0)
 
             batch_inputs.append(cell_input)
             positions.append((r, c))

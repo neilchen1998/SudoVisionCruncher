@@ -1,19 +1,16 @@
 import argparse
 import cv2
 import matplotlib.pyplot as plt
-import numpy as np
-import os
-import sys
 
 from pathlib import Path
 
 from src.digit_predict import load_model
 from src.parse_sudoku_board import flatten_board, parse_sudoku_board
 from src.profiler import PipelineProfiler
-from src.render_sudoku_solution import *
+from src.render_sudoku_solution import render_solution_overlay, overlay_solution_on_board
 from src.solver import solve_sudoku
 
-def print_board(board: list[list], width:int = 3):
+def print_board(board: list[list[int]], width: int = 3):
     """
     Prints the Sudoku board
 
@@ -32,7 +29,7 @@ def print_board(board: list[list], width:int = 3):
 def main():
 
     # Set the default model path
-    ROOT_DIR = Path.cwd()
+    ROOT_DIR = Path(__file__).resolve().parent
     MODEL_PATH = ROOT_DIR / "models" / "digit_recognition_model_TMNIST.keras"
 
     # Create a parser
@@ -62,7 +59,8 @@ def main():
     model = profiler.profile(
         "Load model",
         load_model,
-        str(args.model_path)
+        str(args.model_path),
+        args.verbose
     )
 
     # Import the image and turn into grey scale
@@ -124,7 +122,7 @@ def main():
 
     if args.output:
         resized_result = cv2.resize(result, (350, 350))
-        cv2.imwrite(f"{args.output}", resized_result)
+        cv2.imwrite(str(args.output), resized_result)
 
     return
 

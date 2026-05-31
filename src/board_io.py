@@ -1,12 +1,12 @@
 import json
 
-def save_sudoku_json(board: list[list], file_path: str):
+def save_sudoku_json(board: list[list[int]], file_path: str):
     """
     Saves a Sudoku board grid to a JSON file.
 
     Args:
         board: A list of lists that represents the Sudoku grid
-        file_path The file path where the JSON data should be saved
+        file_path: The file path where the JSON data should be saved
 
     Raises:
         OSError: If the file cannot be opened or written to
@@ -17,7 +17,6 @@ def save_sudoku_json(board: list[list], file_path: str):
         json.dump({"board": board}, file, indent=2)
 
 def open_sudoku_json(file_path: str) -> list[list]:
-
     """
     Loads a Sudoku board from the given JSON file
 
@@ -25,11 +24,10 @@ def open_sudoku_json(file_path: str) -> list[list]:
         file_path: The JSON file path
 
     Returns:
-        list[list]: The Sudoku board
+        list[list[int]]: The Sudoku board, or an empty file
 
     Raises:
         FileNotFoundError: The given file does not exist
-        json.JSONDecodeError: The given JSON file is empty or invalid
         KeyError: The given JSON file is missing the "board" key
     """
 

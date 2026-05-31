@@ -1,4 +1,4 @@
-def solve_sudoku(board: list[list]) -> list[list]:
+def solve_sudoku(board: list[list[int]]) -> list[list]:
     """
     Solves Sudoku
 
@@ -6,7 +6,7 @@ def solve_sudoku(board: list[list]) -> list[list]:
         board: The Sudoku board
 
     Returns:
-        list[list]: The solved Sudoku board
+        list[list[int]]: The solved Sudoku board
     """
 
     # Bitmasks for constraints

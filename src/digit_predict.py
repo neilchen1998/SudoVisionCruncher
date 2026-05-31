@@ -3,12 +3,13 @@ import numpy as np
 import os
 import tensorflow as tf
 
-def load_model(model_path: str, verbose=0) -> tf.keras.Model:
+def load_model(model_path: str, verbose: bool = False) -> tf.keras.Model:
     """
     Loads the tensorflow model
 
     Args:
         model_path: The path of the model
+        verbose: True if
 
     Returns:
         tf.keras.Model: The loaded TensorFlow Keras model
@@ -17,18 +18,14 @@ def load_model(model_path: str, verbose=0) -> tf.keras.Model:
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"No model found: {model_path}")
 
-    try:
-        model = tf.keras.models.load_model(model_path)
+    model = tf.keras.models.load_model(model_path)
 
-        if verbose > 0:
-            print("Model loaded successfully!")
-        return model
+    if verbose:
+        print("Model loaded successfully from %s", model_path)
 
-    except Exception as e:
-        print(f"Failed to load the model: {e}")
-        raise
+    return model
 
-def load_and_preprocess_image(image_path, target_size=(28, 28), inverse=True):
+def load_and_preprocess_image(image_path: str, target_size: tuple[int, int] = (28, 28), inverse: bool = True) -> np.ndarray:
     """
     Loads an image in grey scale, resizes it, optionally inverts the colour,
     normalizes it, and reshapes it for the model
@@ -39,7 +36,7 @@ def load_and_preprocess_image(image_path, target_size=(28, 28), inverse=True):
         inverse: Inverses the digit from black to white
 
     Returns:
-        NDArray: The processed image
+        np.ndarray: The processed image
     """
 
     img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
@@ -62,12 +59,13 @@ def load_and_preprocess_image(image_path, target_size=(28, 28), inverse=True):
 
     return img_ret
 
-def predict_digit(model: tf.keras.models, img) -> tuple[int, float]:
+def predict_digit(model: tf.keras.models, img: np.ndarray) -> tuple[int, float]:
     """
     Predicts the digit and output a confidence score
 
     Args:
         model: The Keras model
+        img: The preprocessed input image
 
     Returns:
         tuple[int, float]: [the index of the predicted digit, the confidence score]
@@ -80,7 +78,7 @@ def predict_digit(model: tf.keras.models, img) -> tuple[int, float]:
 
     return predicted_digit, confidence
 
-def run_digit_prediction_pipeline(model_path, image_path):
+def run_digit_prediction_pipeline(model_path: str, image_path: str) -> tuple[int, float]:
     """
     Runs the entire pipeline that predicts the digit and output a confidence score
 
