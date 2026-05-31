@@ -77,9 +77,9 @@ def overlay_solution_on_board(img: np.ndarray, overlay: np.ndarray, M: np.ndarra
     # Transform the overlay image so that it will fit into the background image (the original image)
     warped_overlay = cv2.warpPerspective(overlay, M_inv, (w, h))
 
-    # Create a mask that for the foreground image
-    grey = cv2.cvtColor(warped_overlay, cv2.COLOR_BGR2GRAY)
-    _, mask = cv2.threshold(grey, 10, 255, cv2.THRESH_BINARY)
+    # Create a mask that for the foreground image from the channel maximum
+    channel_max = np.max(warped_overlay, axis=2)    # takes the max. of its 3-channel value
+    _, mask = cv2.threshold(channel_max, 10, 255, cv2.THRESH_BINARY)
 
     # Keep the cells that contain the solution
     foreground = cv2.bitwise_and(warped_overlay, warped_overlay, mask=mask)
