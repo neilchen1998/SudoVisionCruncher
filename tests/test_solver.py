@@ -66,7 +66,7 @@ INVALID_BOARD = [
 ]
 
 
-def make_puzzle(solved_board: list[list], n: int) -> list[list]:
+def make_puzzle(solved_board: list[list[int]], n: int) -> list[list]:
     """
     Generates Sudoku puzzle by blanking out n amount of random cells
     NOTE: the value of n cannot be lower than 17
