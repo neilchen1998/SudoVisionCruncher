@@ -9,7 +9,7 @@ def load_model(model_path: str, verbose: bool = False) -> tf.keras.Model:
 
     Args:
         model_path: The path of the model
-        verbose: True if
+        verbose: If True, then the function prints a status message after the model loads
 
     Returns:
         tf.keras.Model: The loaded TensorFlow Keras model
@@ -21,7 +21,7 @@ def load_model(model_path: str, verbose: bool = False) -> tf.keras.Model:
     model = tf.keras.models.load_model(model_path)
 
     if verbose:
-        print("Model loaded successfully from %s", model_path)
+        print(f"Model loaded successfully from {model_path}")
 
     return model
 
@@ -59,7 +59,7 @@ def load_and_preprocess_image(image_path: str, target_size: tuple[int, int] = (2
 
     return img_ret
 
-def predict_digit(model: tf.keras.models, img: np.ndarray) -> tuple[int, float]:
+def predict_digit(model: tf.keras.Model, img: np.ndarray) -> tuple[int, float]:
     """
     Predicts the digit and output a confidence score
 

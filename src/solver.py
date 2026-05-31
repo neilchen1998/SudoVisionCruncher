@@ -1,4 +1,4 @@
-def solve_sudoku(board: list[list[int]]) -> list[list]:
+def solve_sudoku(board: list[list[int]]) -> list[list[int]]:
     """
     Solves Sudoku
 
