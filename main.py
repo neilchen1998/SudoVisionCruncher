@@ -9,6 +9,7 @@ from src.parse_sudoku_board import flatten_board, parse_sudoku_board
 from src.profiler import PipelineProfiler
 from src.render_sudoku_solution import render_solution_overlay, overlay_solution_on_board
 from src.solver import solve_sudoku
+from src.colours import bgr
 
 def print_board(board: list[list[int]], width: int = 3):
     """
@@ -42,6 +43,7 @@ def main():
     parser.add_argument("-m", "--model-path", type=Path, default=MODEL_PATH, help="The file path of the OCR model")
     parser.add_argument("-V", "--verbose", action="store_true", default=False, help="Print the pipeline profile summary")
     parser.add_argument("--output", "-o", help="The output path", default=None)
+    parser.add_argument("--colour", "-c", type=str, help="Overlay colour", default='red')
 
     # Parse the arguments
     args = parser.parse_args()
@@ -96,7 +98,8 @@ def main():
         "Render overlay",
         render_solution_overlay,
         solved_board,
-        empty_positions
+        empty_positions,
+        colour=bgr(args.colour)
     )
 
     # Overlay the solution on the original image

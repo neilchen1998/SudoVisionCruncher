@@ -2,7 +2,8 @@ import cv2
 import numpy as np
 
 def render_solution_overlay(solved_board: list[list[int]], empty_positions: list[tuple[int, int]],
-                            board_size:int = 450, FONT_FACE:int = cv2.FONT_HERSHEY_SCRIPT_SIMPLEX,FONT_SCALE:float = 1.2, THICKNESS:int = 2) -> np.ndarray:
+                            board_size:int = 450, FONT_FACE:int = cv2.FONT_HERSHEY_SCRIPT_SIMPLEX,
+                            FONT_SCALE:float = 1.2, THICKNESS:int = 2, colour: tuple[int, int, int] = (0, 255, 255)) -> np.ndarray:
     """
     Renders the solution on the given image
 
@@ -10,8 +11,9 @@ def render_solution_overlay(solved_board: list[list[int]], empty_positions: list
         solved_board: The solved Sudoku board
         empty_positions: A list of coordinates that represent empty cells
         board_size: The size of the board (default is 450)
-        FONT_SCALE: The scale of the font (default to 1.2)
-        THICKNESS: The thickness of the font (default to 2.0)
+        FONT_SCALE: The scale of the font (default is 1.2)
+        THICKNESS: The thickness of the font (default is 2.0)
+        colour: The BGR colour used to draw the digits (default is red)
 
     Returns:
         np.ndarray: The overlay image
@@ -46,7 +48,7 @@ def render_solution_overlay(solved_board: list[list[int]], empty_positions: list
             (text_x, text_y),
             FONT_FACE,
             FONT_SCALE,
-            (0, 0, 255),    # (B, G, R)
+            colour,    # (B, G, R)
             THICKNESS,
             cv2.LINE_AA # anti-aliased line type.
         )
@@ -75,9 +77,9 @@ def overlay_solution_on_board(img: np.ndarray, overlay: np.ndarray, M: np.ndarra
     # Transform the overlay image so that it will fit into the background image (the original image)
     warped_overlay = cv2.warpPerspective(overlay, M_inv, (w, h))
 
-    # Create a mask that for the foreground image
-    grey = cv2.cvtColor(warped_overlay, cv2.COLOR_BGR2GRAY)
-    _, mask = cv2.threshold(grey, 10, 255, cv2.THRESH_BINARY)
+    # Create a mask that for the foreground image from the channel maximum
+    channel_max = np.max(warped_overlay, axis=2)    # takes the max. of its 3-channel value
+    _, mask = cv2.threshold(channel_max, 10, 255, cv2.THRESH_BINARY)
 
     # Keep the cells that contain the solution
     foreground = cv2.bitwise_and(warped_overlay, warped_overlay, mask=mask)

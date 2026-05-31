@@ -59,6 +59,12 @@ Run the main script and store the result:
 uv run ./main.py <sudoku.png> -o <output.png>
 ```
 
+Run the main script with specific colour (orange, yellow, etc.):
+
+```zsh
+uv run ./main.py <sudoku.png> -c <colour>
+```
+
 Run the **pytest**:
 
 ```zsh
@@ -469,8 +475,42 @@ Project overlay          0.002s (0.6%)
         Total time elapsed: 0.284s
 ```
 
+## Fuzzy Matching
+
+*difflib* is a library that identifies the closet string matches to a target word from a list of possibilities.
+We use this module to help users to suggest colour names if they make a typo.
+
+We first need to create a list of all the colour names available in CSS by:
+
+```python
+CSS_COLOURS = list(webcolors.names())
+```
+
+, and this will be used as the possibilities list by *get_close_matches()*.
+
+We then can first try to pass the user input name to *webcolors.name_to_rgb()*.
+If the user input is an invalid name, then we can call *get_close_matches()* to get the suggestions.
+In this case we just want to prompt the user with the closest match, therefore we set **n** to $1$.
+
+```python
+suggestion = get_close_matches(name.lower(), CSS_COLOURS, n=1)
+```
+
+Let say the user run the main script with the an invalid colour name (**gren** instead of **green**):
+
+```zsh
+uv run ./main.py ./data/sudoku.png -c gren
+```
+
+And the user will get **ValueError** and with the following prompt:
+
+```zsh
+ValueError: Unknown colour: gren. Did you mean 'green'?
+```
+
 ## Reference
 
+* [difflib](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher)
 * [Image Thresholding ](https://opencv24-python-tutorials.readthedocs.io/en/latest/py_tutorials/py_imgproc/py_thresholding/py_thresholding.html)
 * [sudoku-5](https://mathsphere.co.uk/downloads/sudoku/10202-medium.pdf)
 * [TMNIST](https://www.kaggle.com/datasets/nimishmagre/tmnist-typeface-mnist)
