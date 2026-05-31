@@ -2,7 +2,8 @@ import cv2
 import numpy as np
 
 def render_solution_overlay(solved_board: list[list[int]], empty_positions: list[tuple[int, int]],
-                            board_size:int = 450, FONT_FACE:int = cv2.FONT_HERSHEY_SCRIPT_SIMPLEX,FONT_SCALE:float = 1.2, THICKNESS:int = 2) -> np.ndarray:
+                            board_size:int = 450, FONT_FACE:int = cv2.FONT_HERSHEY_SCRIPT_SIMPLEX,
+                            FONT_SCALE:float = 1.2, THICKNESS:int = 2, colour: tuple[int, int, int] = (0, 255, 255)) -> np.ndarray:
     """
     Renders the solution on the given image
 
@@ -10,8 +11,9 @@ def render_solution_overlay(solved_board: list[list[int]], empty_positions: list
         solved_board: The solved Sudoku board
         empty_positions: A list of coordinates that represent empty cells
         board_size: The size of the board (default is 450)
-        FONT_SCALE: The scale of the font (default to 1.2)
-        THICKNESS: The thickness of the font (default to 2.0)
+        FONT_SCALE: The scale of the font (default is 1.2)
+        THICKNESS: The thickness of the font (default is 2.0)
+        colour: The BGR colour used to draw the digits (default is red)
 
     Returns:
         np.ndarray: The overlay image
@@ -46,7 +48,7 @@ def render_solution_overlay(solved_board: list[list[int]], empty_positions: list
             (text_x, text_y),
             FONT_FACE,
             FONT_SCALE,
-            (0, 0, 255),    # (B, G, R)
+            colour,    # (B, G, R)
             THICKNESS,
             cv2.LINE_AA # anti-aliased line type.
         )
