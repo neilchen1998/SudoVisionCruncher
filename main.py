@@ -61,7 +61,8 @@ def main():
     model = profiler.profile(
         "Load model",
         load_model,
-        str(args.model_path)
+        str(args.model_path),
+        args.verbose
     )
 
     # Import the image and turn into grey scale
