@@ -157,24 +157,32 @@ def test_flatten_board_success(synthetic_sudoku_image):
     N = 450
 
     # Run the function
-    result = flatten_board(synthetic_sudoku_image)
+    flat_board, M = flatten_board(synthetic_sudoku_image)
 
     # Assert the type of the result
-    assert isinstance(result, np.ndarray), "Output should be a numpy array"
+    assert isinstance(flat_board, np.ndarray), "Output should be a numpy array"
+    assert isinstance(M, np.ndarray), "Output should be a numpy array"
 
     # Assert the shape of the result
-    assert result.shape == (
+    assert flat_board.shape == (
         N,
         N,
     ), f"Output shape should be ({N}, {N})"
 
     # Assert the shape (it should be a single-channel image)
     assert (
-        len(result.shape) == 2
+        len(flat_board.shape) == 2
     ), "Output should be single-channel greyscale (2D array)"
 
     # Check that it extracted the white board area (it shouldn't be completely black)
-    assert np.max(result) > 0, "The result should contain the warped board data"
+    assert np.max(flat_board) > 0, "The result should contain the warped board data"
+
+    # Check the shape of the perspective matrix
+    assert M.shape == (3, 3)
+
+    # Check every number in the matrix is a finite number
+    assert np.all(np.isfinite(M))
+
 
 @pytest.mark.parametrize("test_n", [50, 100, 150, 200, 300, 400, 500])
 def test_flatten_board_custom_n(synthetic_sudoku_image, test_n):
@@ -182,9 +190,9 @@ def test_flatten_board_custom_n(synthetic_sudoku_image, test_n):
     Tests if the function respects a custom N dimension parameter
     """
 
-    result = flatten_board(synthetic_sudoku_image, N=test_n)
+    flat_board, M = flatten_board(synthetic_sudoku_image, N=test_n)
 
-    assert result.shape == (test_n, test_n)
+    assert flat_board.shape == (test_n, test_n)
 
 
 @pytest.fixture
@@ -267,9 +275,10 @@ def test_flatten_board_success(synthetic_sudoku_image):
     Standard success test (uses default fixture parameters)
     """
 
-    result = flatten_board(synthetic_sudoku_image)
+    flat_board, M = flatten_board(synthetic_sudoku_image)
 
-    assert result is not None
+    assert flat_board is not None
+    assert M is not None
 
 @pytest.mark.parametrize(
     "synthetic_sudoku_image",
@@ -286,9 +295,9 @@ def test_flatten_board_custom_values(synthetic_sudoku_image):
     Tests custom bounding boxes
     """
 
-    result = flatten_board(synthetic_sudoku_image)
+    flat_board, M = flatten_board(synthetic_sudoku_image)
 
-    assert result.shape == (450, 450)
+    assert flat_board.shape == (450, 450)
 
 @pytest.mark.parametrize(
     "synthetic_skewed_sudoku_image",
@@ -305,9 +314,9 @@ def test_flatten_skewed_board_custom_values(synthetic_skewed_sudoku_image):
     Tests custom skewed bounding boxes
     """
 
-    result = flatten_board(synthetic_skewed_sudoku_image)
+    flat_board, M = flatten_board(synthetic_skewed_sudoku_image)
 
-    assert result.shape == (450, 450)
+    assert flat_board.shape == (450, 450)
 
 @pytest.mark.parametrize(
     "image_fixture_name, expected_error, expected_error_msg",
