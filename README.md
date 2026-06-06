@@ -508,6 +508,20 @@ And the user will get **ValueError** and with the following prompt:
 ValueError: Unknown colour: gren. Did you mean 'green'?
 ```
 
+##
+
+To find the file path of a particular font, let say **arial**, on the system, run:
+
+```zsh
+$ sudo find /System/Library /Library -iname "*arial*"
+```
+
+On Mac, you might get:
+
+```zsh
+/System/Library/Templates/Data/Library/Fonts/Arial Unicode.ttf
+```
+
 ## Reference
 
 * [difflib](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher)
