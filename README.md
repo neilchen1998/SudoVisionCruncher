@@ -80,22 +80,22 @@ The following shows an example Sudoku input image:
 Run the script with:
 
 ```zsh
-uv run ./main.py ./data/sudoku-5.png
+uv run ./main.py ./data/sudoku.png
 ```
 
 A preview window will appear showing the result:
 
-![Sudoku sample result](example/sudoku-5-preview.png)
+![Sudoku sample result](example/sudoku-preview.png)
 
 If you provide the *-o* argument, the result will be saved to the given path in addition to being displayed.
 
 ```zsh
-uv run ./main.py ./data/sudoku-4.png -o example/sudoku-4-result.png
+uv run ./main.py ./data/sudoku.png -o example/sudoku-result.png
 ```
 
 Saved output:
 
-![Sudoku sample result](example/sudoku-4-result.png)
+![Sudoku sample result](example/sudoku-result.png)
 
 ## Pipeline
 
