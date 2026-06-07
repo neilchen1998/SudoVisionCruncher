@@ -90,7 +90,7 @@ def main():
     )
 
     # Parse the given Sudoku board
-    board, empty_positions, most_common_font = profiler.profile(
+    board, empty_positions, font = profiler.profile(
         "OCR",
         parse_sudoku_board,
         flatten_img,
@@ -111,6 +111,7 @@ def main():
         render_solution_overlay,
         solved_board,
         empty_positions,
+        font,
         colour=bgr(args.colour)
     )
 

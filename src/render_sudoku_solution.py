@@ -1,8 +1,48 @@
 import cv2
 import numpy as np
 
+# The paths of the fonts
+FONT_PATHS = [
+    "/System/Library/Fonts/Helvetica.ttc",
+    "/System/Library/Fonts/Supplemental/AppleGothic.ttf",
+    "/System/Library/Fonts/Supplemental/Arial.ttf",
+    "/System/Library/Fonts/Supplemental/Georgia.ttf",
+    "/System/Library/Fonts/Times.ttc",
+]
+
+FONT_NAME = [
+    "helvetica",
+    "apple_gothic",
+    "arial",
+    "georgia",
+    "times",
+]
+
+FONT_TO_LABEL = {path : idx for idx, path in enumerate(FONT_PATHS)}
+
+LABEL_TO_FONT = {idx : path for idx, path in enumerate(FONT_PATHS)}
+
+LABEL_TO_FONT_NAME = {idx : name for idx, name in enumerate(FONT_NAME)}
+
+ft = cv2.freetype.createFreeType2()
+
+fonts = {
+    "helvetica": cv2.freetype.createFreeType2(),
+    "apple_gothic": cv2.freetype.createFreeType2(),
+    "arial": cv2.freetype.createFreeType2(),
+    "georgia": cv2.freetype.createFreeType2(),
+    "times": cv2.freetype.createFreeType2(),
+}
+
+fonts["helvetica"].loadFontData(fontFileName=FONT_PATHS[0], id=0)
+fonts["apple_gothic"].loadFontData(fontFileName=FONT_PATHS[1], id=0)
+fonts["arial"].loadFontData(fontFileName=FONT_PATHS[2], id=0)
+fonts["georgia"].loadFontData(fontFileName=FONT_PATHS[3], id=0)
+fonts["times"].loadFontData(fontFileName=FONT_PATHS[4], id=0)
+
 def render_solution_overlay(solved_board: list[list[int]], empty_positions: list[tuple[int, int]],
-                            board_size:int = 450, FONT_FACE:int = cv2.FONT_HERSHEY_SCRIPT_SIMPLEX,
+                            font_face:int = cv2.FONT_HERSHEY_SCRIPT_SIMPLEX,
+                            board_size:int = 450,
                             FONT_SCALE:float = 1.2, THICKNESS:int = 2, colour: tuple[int, int, int] = (0, 255, 255)) -> np.ndarray:
     """
     Renders the solution on the given image
@@ -33,7 +73,7 @@ def render_solution_overlay(solved_board: list[list[int]], empty_positions: list
         # Find the width and the height of the text based on the font, scale, etc.
         (text_w, text_h), _ = cv2.getTextSize(
             digit,
-            FONT_FACE,
+            font_face,
             FONT_SCALE,
             THICKNESS,
         )
@@ -42,12 +82,11 @@ def render_solution_overlay(solved_board: list[list[int]], empty_positions: list
         text_x = x + (cell_size - text_w) // 2
         text_y = y + (cell_size + text_h) // 2
 
-        cv2.putText(
+        fonts[LABEL_TO_FONT_NAME[font_face]].putText(
             overlay,
             digit,
             (text_x, text_y),
-            FONT_FACE,
-            FONT_SCALE,
+            font_face,
             colour,    # (B, G, R)
             THICKNESS,
             cv2.LINE_AA # anti-aliased line type.
