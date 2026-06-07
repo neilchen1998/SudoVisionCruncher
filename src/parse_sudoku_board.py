@@ -187,8 +187,11 @@ def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model:
     # Find the size of the cell
     cell_size = board.shape[0] // 9
 
-    # For batch prediction
+    # For batch prediction (OCR)
     batch_inputs = []
+
+    # For batch prediction (font)
+    batch_inputs_font = []
 
     # For reconstruction
     positions = []
@@ -295,7 +298,24 @@ def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model:
             batch_inputs.append(cell_input)
             positions.append((r, c))
 
-    # Batch prediction
+            # Font
+            canvas = np.zeros(
+                (64, 64),
+                dtype=np.uint8
+            )
+            x_offset = (64 - new_w) // 2
+            y_offset = (64 - new_h) // 2
+            canvas[
+                y_offset:y_offset+new_h,
+                x_offset:x_offset+new_w
+            ] = resized_digit
+
+            # Normalize
+            cell_input = (canvas.astype("float32") / 255.0)
+
+            batch_inputs_font.append(cell_input)
+
+    # Batch prediction (OCR)
     if batch_inputs:
 
         # Reshape inputs into a numpy array
@@ -313,6 +333,25 @@ def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model:
         # Put the prediction results back into grid
         for (r, c), digit in zip(positions, predicted_digits):
             grid[r][c] = int(digit)
+
+    # Batch prediction (font)
+    if batch_inputs_font:
+
+        # Reshape inputs into a numpy array
+        batch_array = np.array(batch_inputs_font).reshape(
+            -1, # the original shape
+            64,
+            64,
+            1
+        )
+
+        # Predict the digits in a single batch
+        predictions = font_model.predict(batch_array, verbose=0)
+        predicted_fonts = np.argmax(predictions, axis=1)
+
+        # Put the prediction results back into grid
+        for (r, c), font in zip(positions, predicted_fonts):
+            print(f"Font lable: {font} ({r}, {c})")
 
     # Validation
     if not is_valid_sudoku(grid):
