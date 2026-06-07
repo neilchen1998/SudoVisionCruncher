@@ -372,8 +372,6 @@ def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model:
         predictions = font_model.predict(batch_array_font, verbose=0)
         predicted_fonts = np.argmax(predictions, axis=1)
 
-        print(f"Predictions (font): {predicted_fonts}")
-
         # Put the prediction results back into grid
         most_common_font = Counter(predicted_fonts).most_common(1)[0][0]
 
