@@ -1,7 +1,9 @@
 from collections import Counter
+from tensorflow import keras
 import cv2
 import numpy as np
 import tensorflow as tf
+import matplotlib.pyplot as plt
 
 def flatten_board(img: np.ndarray, N: int = 450) -> tuple[np.ndarray, np.ndarray]:
 
@@ -163,6 +165,43 @@ def is_valid_sudoku(board: list[list[int]]) -> bool:
 
     return True
 
+def preprocess_digit(digit: np.ndarray, digit_target_size: int, canvas_size: int) -> np.ndarray:
+    """
+    Resizes a digit while preserving aspect ratio,
+    centers it on a square canvas,
+    and normalizs pixel values to [0, 1].
+
+    Args:
+        digit: Grayscale digit image
+        digit_target_size: Size of the longest side after resizing
+        canvas_size: Size of the square model input canvas
+
+    Returns:
+        np.ndarray: Normalized image
+    """
+    h_digit, w_digit = digit.shape
+
+    # Resize the digit to DIGIT_TARGET_SIZE but also preserve the aspect
+    scale = digit_target_size / max(h_digit, w_digit)
+    new_w = max(1, int(w_digit * scale))
+    new_h = max(1, int(h_digit * scale))
+
+    resized_digit = cv2.resize(digit, (new_w, new_h), interpolation=cv2.INTER_AREA)
+
+    canvas = np.zeros((canvas_size, canvas_size), dtype=np.uint8)
+
+    x_offset = (canvas_size - new_w) // 2
+    y_offset = (canvas_size - new_h) // 2
+
+    # Put the digit in the center of a canvas
+    canvas[
+        y_offset:y_offset + new_h,
+        x_offset:x_offset + new_w
+    ] = resized_digit
+
+    # Normalize to [0, 1]
+    return canvas.astype(np.float32) / 255.0
+
 def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model: tf.keras.Model) -> tuple[list[list[int]], list[tuple[int, int, int]]]:
     """
     Parse a 9x9 grid image into a 2D list of predicted digits using OCR
@@ -189,7 +228,7 @@ def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model:
     cell_size = board.shape[0] // 9
 
     # For batch prediction (OCR)
-    batch_inputs = []
+    batch_inputs_ocr = []
 
     # For batch prediction (font)
     batch_inputs_font = []
@@ -274,56 +313,38 @@ def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model:
             # Crop the digit
             digit = thresh[y:y+h, x:x+w]
 
-            # Resize the digit to DIGIT_TARGET_SIZE but also preserve the aspect
-            h_digit, w_digit = digit.shape
-            scale = DIGIT_TARGET_SIZE / max(h_digit, w_digit)
-            new_w = max(1, int(w_digit * scale))
-            new_h = max(1, int(h_digit * scale))
-            resized_digit = cv2.resize(digit, (new_w, new_h))
-
             # Put the digit in the center of a 28x28 canvas
-            canvas = np.zeros(
-                (MODEL_INPUT_SIZE, MODEL_INPUT_SIZE),
-                dtype=np.uint8
+            cell_input = preprocess_digit(
+                digit,
+                DIGIT_TARGET_SIZE,
+                MODEL_INPUT_SIZE
             )
-            x_offset = (MODEL_INPUT_SIZE - new_w) // 2
-            y_offset = (MODEL_INPUT_SIZE - new_h) // 2
-            canvas[
-                y_offset:y_offset+new_h,
-                x_offset:x_offset+new_w
-            ] = resized_digit
 
-            # Normalize
-            cell_input = (canvas.astype("float32") / 255.0)
-
-            batch_inputs.append(cell_input)
+            # Append the cell to the OCR list
+            batch_inputs_ocr.append(cell_input)
             positions.append((r, c))
 
             # Font
-            canvas = np.zeros(
-                (64, 64),
-                dtype=np.uint8
-            )
-            x_offset = (64 - new_w) // 2
-            y_offset = (64 - new_h) // 2
-            canvas[
-                y_offset:y_offset+new_h,
-                x_offset:x_offset+new_w
-            ] = resized_digit
-
-            # Normalize
-            cell_input = (canvas.astype("float32") / 255.0)
+            cell_input_font = preprocess_digit(digit, int(64 * 0.8), 64)
 
             # Convert to RGB
-            cell_input = np.stack([cell_input, cell_input, cell_input], axis=-1)
+            cell_input_font = np.stack([cell_input_font, cell_input_font, cell_input_font], axis=-1)
 
-            batch_inputs_font.append(cell_input)
+            # fig, ax = plt.subplots(figsize=(6, 6))
+            # ax.imshow(cv2.cvtColor(cell_input_font, cv2.COLOR_BGR2RGB))  # NOTE: OpenCV uses BGR but matplotlib uses RGB
+            # ax.set_title("Solved Sudoku", pad=2)
+            # ax.axis('off')
+            # plt.tight_layout(pad=1.0)
+            # plt.show()
+
+            # Append the cell to the font list
+            batch_inputs_font.append(cell_input_font)
 
     # Batch prediction (OCR)
-    if batch_inputs:
+    if batch_inputs_ocr:
 
         # Reshape inputs into a numpy array
-        batch_array = np.array(batch_inputs).reshape(
+        batch_array = np.array(batch_inputs_ocr).reshape(
             -1, # the original shape
             MODEL_INPUT_SIZE,
             MODEL_INPUT_SIZE,
@@ -342,22 +363,26 @@ def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model:
     if batch_inputs_font:
 
         # Reshape inputs into a numpy array
-        batch_array = np.array(batch_inputs_font).reshape(
+        batch_array_font = np.array(batch_inputs_font).reshape(
             -1, # the original shape
             64,
             64,
             3
         )
 
+        batch_array_font = keras.applications.mobilenet_v2.preprocess_input(batch_array_font)
+
         # Predict the digits in a single batch
-        predictions = font_model.predict(batch_array, verbose=0)
+        predictions = font_model.predict(batch_array_font, verbose=0)
         predicted_fonts = np.argmax(predictions, axis=1)
+
+        print(f"Predictions (font): {predicted_fonts}")
 
         # Put the prediction results back into grid
         most_common_font = Counter(predicted_fonts).most_common(1)[0][0]
 
     # Validation
     if not is_valid_sudoku(grid):
-        raise ValueError("Invalid Sudoku grid: {grid}.")
+        raise ValueError(f"Invalid Sudoku grid: {grid}.")
 
     return grid, empty_positions, most_common_font

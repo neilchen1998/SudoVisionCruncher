@@ -92,7 +92,7 @@ def main():
 
     # Parse the given Sudoku board
     board, empty_positions, font_label = profiler.profile(
-        "OCR",
+        "OCR & Font detection",
         parse_sudoku_board,
         flatten_img,
         ocr_model,
@@ -132,13 +132,12 @@ def main():
     if args.verbose:
         profiler.report()
 
-    fig, ax = plt.subplots(figsize=(6, 6))
-    ax.imshow(cv2.cvtColor(result, cv2.COLOR_BGR2RGB))  # NOTE: OpenCV uses BGR but matplotlib uses RGB
-    ax.set_title("Solved Sudoku", pad=2)
-    ax.axis('off')
-
-    plt.tight_layout(pad=1.0)
-    plt.show()
+    # fig, ax = plt.subplots(figsize=(6, 6))
+    # ax.imshow(cv2.cvtColor(result, cv2.COLOR_BGR2RGB))  # NOTE: OpenCV uses BGR but matplotlib uses RGB
+    # ax.set_title("Solved Sudoku", pad=2)
+    # ax.axis('off')
+    # plt.tight_layout(pad=1.0)
+    # plt.show()
 
     if args.output:
         resized_result = cv2.resize(result, (350, 350))
