@@ -162,7 +162,7 @@ def is_valid_sudoku(board: list[list[int]]) -> bool:
 
     return True
 
-def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model: tf.keras.Model) -> tuple[list[list[int]], list[tuple[int, int]]]:
+def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model: tf.keras.Model) -> tuple[list[list[int]], list[tuple[int, int, int]]]:
     """
     Parse a 9x9 grid image into a 2D list of predicted digits using OCR
 
@@ -313,6 +313,9 @@ def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model:
             # Normalize
             cell_input = (canvas.astype("float32") / 255.0)
 
+            # Convert to RGB
+            cell_input = np.stack([cell_input, cell_input, cell_input], axis=-1)
+
             batch_inputs_font.append(cell_input)
 
     # Batch prediction (OCR)
@@ -342,7 +345,7 @@ def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model:
             -1, # the original shape
             64,
             64,
-            1
+            3
         )
 
         # Predict the digits in a single batch
@@ -350,11 +353,10 @@ def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model:
         predicted_fonts = np.argmax(predictions, axis=1)
 
         # Put the prediction results back into grid
-        for (r, c), font in zip(positions, predicted_fonts):
-            print(f"Font lable: {font} ({r}, {c})")
+        most_common_font = Counter(predicted_fonts).most_common(1)[0][0]
 
     # Validation
     if not is_valid_sudoku(grid):
         raise ValueError("Invalid Sudoku grid: {grid}.")
 
-    return grid, empty_positions
+    return grid, empty_positions, most_common_font
