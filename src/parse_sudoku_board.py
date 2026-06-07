@@ -3,19 +3,6 @@ import cv2
 import numpy as np
 import tensorflow as tf
 
-# The paths of the fonts
-FONT_PATHS = [
-    "/System/Library/Fonts/Helvetica.ttc",
-    "/System/Library/Fonts/Supplemental/AppleGothic.ttf",
-    "/System/Library/Fonts/Supplemental/Arial.ttf",
-    "/System/Library/Fonts/Supplemental/Georgia.ttf",
-    "/System/Library/Fonts/Times.ttc",
-]
-
-FONT_TO_LABEL = {path : idx for idx, path in enumerate(FONT_PATHS)}
-
-LABEL_TO_FONT = {idx : path for idx, path in enumerate(FONT_PATHS)}
-
 def flatten_board(img: np.ndarray, N: int = 450) -> tuple[np.ndarray, np.ndarray]:
 
     """
