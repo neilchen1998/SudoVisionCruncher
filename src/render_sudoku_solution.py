@@ -1,3 +1,4 @@
+from PIL import Image, ImageDraw, ImageFont
 import cv2
 import numpy as np
 
@@ -10,58 +11,45 @@ FONT_PATHS = [
     "/System/Library/Fonts/Times.ttc",
 ]
 
-FONT_NAME = [
-    "helvetica",
-    "apple_gothic",
-    "arial",
-    "georgia",
-    "times",
-]
 
 FONT_TO_LABEL = {path : idx for idx, path in enumerate(FONT_PATHS)}
 
 LABEL_TO_FONT = {idx : path for idx, path in enumerate(FONT_PATHS)}
 
-LABEL_TO_FONT_NAME = {idx : name for idx, name in enumerate(FONT_NAME)}
-
-ft = cv2.freetype.createFreeType2()
-
-fonts = {
-    "helvetica": cv2.freetype.createFreeType2(),
-    "apple_gothic": cv2.freetype.createFreeType2(),
-    "arial": cv2.freetype.createFreeType2(),
-    "georgia": cv2.freetype.createFreeType2(),
-    "times": cv2.freetype.createFreeType2(),
-}
-
-fonts["helvetica"].loadFontData(fontFileName=FONT_PATHS[0], id=0)
-fonts["apple_gothic"].loadFontData(fontFileName=FONT_PATHS[1], id=0)
-fonts["arial"].loadFontData(fontFileName=FONT_PATHS[2], id=0)
-fonts["georgia"].loadFontData(fontFileName=FONT_PATHS[3], id=0)
-fonts["times"].loadFontData(fontFileName=FONT_PATHS[4], id=0)
-
-def render_solution_overlay(solved_board: list[list[int]], empty_positions: list[tuple[int, int]],
-                            font_face:int = cv2.FONT_HERSHEY_SCRIPT_SIMPLEX,
-                            board_size:int = 450,
-                            FONT_SCALE:float = 1.2, THICKNESS:int = 2, colour: tuple[int, int, int] = (0, 255, 255)) -> np.ndarray:
+def render_solution_overlay(
+    solved_board: list[list[int]],
+    empty_positions: list[tuple[int, int]],
+    font_label: int,
+    board_size: int = 450,
+    FONT_SCALE: float = 1.2,
+    colour: tuple[int, int, int] = (255, 0, 0),
+) -> np.ndarray:
     """
-    Renders the solution on the given image
+    Renders Sudoku solution overlay using PIL fonts.
 
     Args:
         solved_board: The solved Sudoku board
         empty_positions: A list of coordinates that represent empty cells
         board_size: The size of the board (default is 450)
         FONT_SCALE: The scale of the font (default is 1.2)
-        THICKNESS: The thickness of the font (default is 2.0)
-        colour: The BGR colour used to draw the digits (default is red)
+        colour: The RGB colour used to draw the digits (default is red)
 
     Returns:
         np.ndarray: The overlay image
     """
 
-    overlay = np.zeros((board_size, board_size, 3), dtype=np.uint8)
+    # Get the path of the font
+    font_path = LABEL_TO_FONT[font_label]
+
+    # Create blank image
+    img = Image.new("RGB", (board_size, board_size), (0, 0, 0))
+    draw = ImageDraw.Draw(img)
 
     cell_size = board_size // 9
+
+    # Load the font
+    font_size = int(cell_size * 0.6 * FONT_SCALE)
+    font = ImageFont.truetype(font_path, font_size)
 
     for r, c in empty_positions:
 
@@ -70,29 +58,19 @@ def render_solution_overlay(solved_board: list[list[int]], empty_positions: list
         x = c * cell_size
         y = r * cell_size
 
-        # Find the width and the height of the text based on the font, scale, etc.
-        (text_w, text_h), _ = cv2.getTextSize(
-            digit,
-            font_face,
-            FONT_SCALE,
-            THICKNESS,
-        )
+        # Get text bounding box (replacement for cv2.getTextSize)
+        bbox = draw.textbbox((0, 0), digit, font=font)
+        text_w = bbox[2] - bbox[0]
+        text_h = bbox[3] - bbox[1]
 
-        # Find the text position by centering the text within the box using half the text width and height offsets
+        # Center text inside cell
         text_x = x + (cell_size - text_w) // 2
-        text_y = y + (cell_size + text_h) // 2
+        text_y = y + (cell_size - text_h) // 2
 
-        fonts[LABEL_TO_FONT_NAME[font_face]].putText(
-            overlay,
-            digit,
-            (text_x, text_y),
-            font_face,
-            colour,    # (B, G, R)
-            THICKNESS,
-            cv2.LINE_AA # anti-aliased line type.
-        )
+        draw.text((text_x, text_y), digit, font=font, fill=colour)
 
-    return overlay
+    # Convert back to OpenCV format (BGR)
+    return np.array(img)
 
 def overlay_solution_on_board(img: np.ndarray, overlay: np.ndarray, M: np.ndarray) -> np.ndarray:
     """
