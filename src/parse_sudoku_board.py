@@ -327,9 +327,7 @@ def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model:
             # Font
             cell_input_font = preprocess_digit(digit, int(64 * 0.8), 64)
 
-            # Convert to RGB
-            cell_input_font = np.stack([cell_input_font, cell_input_font, cell_input_font], axis=-1)
-
+            ## Print the input tot the font detection model
             # fig, ax = plt.subplots(figsize=(6, 6))
             # ax.imshow(cv2.cvtColor(cell_input_font, cv2.COLOR_BGR2RGB))  # NOTE: OpenCV uses BGR but matplotlib uses RGB
             # ax.set_title("Solved Sudoku", pad=2)
@@ -367,10 +365,8 @@ def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model:
             -1, # the original shape
             64,
             64,
-            3
+            1
         )
-
-        batch_array_font = keras.applications.mobilenet_v2.preprocess_input(batch_array_font)
 
         # Predict the digits in a single batch
         predictions = font_model.predict(batch_array_font, verbose=0)
