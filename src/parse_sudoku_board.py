@@ -219,7 +219,8 @@ def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model:
 
     # Parameters
     MARGIN_RATIO = 0.2
-    MODEL_INPUT_SIZE = 28
+    OCR_MODEL_INPUT_SIZE = 28
+    FONT_MODEL_INPUT_SIZE = 64
     DIGIT_TARGET_SIZE = 18
     THRESH_BLOCK_SIZE = 11
     THRESH_C = 2
@@ -317,7 +318,7 @@ def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model:
             cell_input = preprocess_digit(
                 digit,
                 DIGIT_TARGET_SIZE,
-                MODEL_INPUT_SIZE
+                OCR_MODEL_INPUT_SIZE
             )
 
             # Append the cell to the OCR list
@@ -325,7 +326,7 @@ def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model:
             positions.append((r, c))
 
             # Font
-            cell_input_font = preprocess_digit(digit, int(64 * 0.8), 64)
+            cell_input_font = preprocess_digit(digit, int(FONT_MODEL_INPUT_SIZE * 0.8), FONT_MODEL_INPUT_SIZE)
 
             ## Print the input tot the font detection model
             # fig, ax = plt.subplots(figsize=(6, 6))
@@ -344,8 +345,8 @@ def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model:
         # Reshape inputs into a numpy array
         batch_array = np.array(batch_inputs_ocr).reshape(
             -1, # the original shape
-            MODEL_INPUT_SIZE,
-            MODEL_INPUT_SIZE,
+            OCR_MODEL_INPUT_SIZE,
+            OCR_MODEL_INPUT_SIZE,
             1
         )
 
@@ -363,8 +364,8 @@ def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model:
         # Reshape inputs into a numpy array
         batch_array_font = np.array(batch_inputs_font).reshape(
             -1, # the original shape
-            64,
-            64,
+            FONT_MODEL_INPUT_SIZE,
+            FONT_MODEL_INPUT_SIZE,
             1
         )
 
@@ -372,7 +373,7 @@ def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model:
         predictions = font_model.predict(batch_array_font, verbose=0)
         predicted_fonts = np.argmax(predictions, axis=1)
 
-        # Put the prediction results back into grid
+        # Make the final font prediction based on the most popular vote
         most_common_font = Counter(predicted_fonts).most_common(1)[0][0]
 
     # Validation
