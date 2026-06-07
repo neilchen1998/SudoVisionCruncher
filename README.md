@@ -524,13 +524,142 @@ On Mac, you might get:
 
 ## Generate Infinite Synthetic Data for Training
 
+We can generate our own dataset to train our model to recognize fonts instead of using dataset from others.
+There are two ways to achieve this, one is generate thousands if not hundered images and store them on the disk, or use a generator to generate infinite dataset.
+In this repo, we are using the latter approach.
+
+In order to call *tf.data.Dataset.from_generator()*, we need to first create a generator that generates dataset.
 
 
+Before we create a generator, we need to write a function that generates an image and its label.
+The function is as follow:
+
+```python
+def generate_digit_image(digit: int) -> tuple[np.ndarray, int]:
+    """
+    Generates a given digit on the image with random augmentation.
+
+    Args:
+        digit: The given digit
+
+    Returns:
+        tuple:
+            np.ndarray: The image
+            int: The label of the image (zero-based index)
+    """
+
+    # Create a greyscale image in grey mode
+    img = Image.new("L", (IMG_SIZE, IMG_SIZE), 255)
+    draw = ImageDraw.Draw(img)
+
+    # Select a random font
+    font_path = random.choice(FONT_PATHS)
+
+    font_label = FONT_TO_LABEL[font_path]
+
+    # Select random font size
+    font_size = random.randint(30, 60)
+
+    try:
+        font = ImageFont.truetype(font_path, font_size)
+    except:
+        font = ImageFont.load_default()
+
+    # Conver the digit to string format
+    text = str(digit)
+
+    # Find the width and height of the text bounding box
+    left, top, right, bottom = draw.textbbox((0, 0), text, font=font)
+    w = right - left
+    h = bottom - top
+
+    # Determine the position of the text
+    x = (IMG_SIZE - w) // 2 + random.randint(-5, 5)
+    y = (IMG_SIZE - h) // 2 + random.randint(-5, 5)
+
+    draw.text((x, y), text, fill='black', font=font)
+
+    # Blur the image
+    if random.random() < 0.4:
+        img = img.filter(ImageFilter.GaussianBlur(random.uniform(0, 1.5)))
+
+    # Convert the image to an array
+    arr = np.array(img).astype(np.float32)
+
+    # Apply noises
+    if random.random() < 0.5:
+        arr += np.random.normal(0, 20, arr.shape)
+
+    # Clip all pixels of the image between 0 and 255
+    arr = np.clip(arr, 0, 255)
+
+    # Convert the image to RGB
+    arr = np.stack([arr, arr, arr], axis=-1)
+
+    return arr.astype(np.float32), font_label
+```
+
+Here we first create a black canvas and pick a random font and font size and draw it at the center of the canvas.
+We then augment the image by blurring and applying noises since input images from the real world will not be ideal.
+Finally, we convert the image from a single channel to RGB format and return it along with its font label.
+
+We then need to create a generator that yields an image and its label so that it can be consumed by *tf.data.Dataset.from_generator()*.
+
+A generator will look something like this:
+
+```python
+def data_generator():
+    """
+    Data generator wrapper that yields an RGB image and its label
+
+    Yields:
+        tuple:
+            np.ndarray: An RGB image that contains an augmented digit
+            int: The label of the image (zero-based index)
+    """
+
+    while True:
+        digit = random.choice(DIGITS)
+        img, label = generate_digit_image(digit)
+        yield img, label
+```
+
+Note that we need to randomly choice a digit so that the dataset can cover all the digits.
+
+Finally, we need to define the signature so *tf.data.Dataset.from_generator()* knows what it is dealing with:
+
+```python
+# Describe what the custom generator will yield
+output_signature = (
+    tf.TensorSpec(shape=(IMG_SIZE, IMG_SIZE, 3), dtype=tf.float32), # the image
+    tf.TensorSpec(shape=(), dtype=tf.int32) # the label
+)
+```
+
+We can then pass all things to it:
+
+```python
+# Create the training dataset from the generator
+train_ds = tf.data.Dataset.from_generator(
+    data_generator,
+    output_signature=output_signature
+)
+```
+
+We can use *prefetch()* to improve performance.
+Prefetching enable the model to prepare the dataset for the pipeline at $s+1$ while the model is being trained at $s$.
+
+```python
+# Use prefetching to improve performance
+train_ds = train_ds.batch(BATCH_SIZE).prefetch(tf.data.AUTOTUNE)
+```
 
 ## Reference
 
 * [difflib](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher)
+* [From Generator](https://www.tensorflow.org/api_docs/python/tf/data/Dataset#from_generator)
 * [Image Thresholding ](https://opencv24-python-tutorials.readthedocs.io/en/latest/py_tutorials/py_imgproc/py_thresholding/py_thresholding.html)
-* [sudoku-5](https://mathsphere.co.uk/downloads/sudoku/10202-medium.pdf)
-* [TMNIST](https://www.kaggle.com/datasets/nimishmagre/tmnist-typeface-mnist)
 * [Prefetching](https://www.tensorflow.org/guide/data_performance)
+* [sudoku-5](https://mathsphere.co.uk/downloads/sudoku/10202-medium.pdf)
+* [Synthetic Data Generation for AI Models](https://www.runpod.io/articles/guides/synthetic-data-generation-creating-high-quality-training-datasets-for-ai-model-development)
+* [TMNIST](https://www.kaggle.com/datasets/nimishmagre/tmnist-typeface-mnist)
