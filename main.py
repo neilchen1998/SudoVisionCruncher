@@ -10,6 +10,7 @@ from src.profiler import PipelineProfiler
 from src.render_sudoku_solution import render_solution_overlay, overlay_solution_on_board
 from src.solver import solve_sudoku
 from src.colours import bgr
+from src.font import LABEL_TO_FONT_NAME
 
 def print_board(board: list[list[int]], width: int = 3):
     """
@@ -90,13 +91,16 @@ def main():
     )
 
     # Parse the given Sudoku board
-    board, empty_positions, font = profiler.profile(
+    board, empty_positions, font_label = profiler.profile(
         "OCR",
         parse_sudoku_board,
         flatten_img,
         ocr_model,
         font_model
     )
+
+    if args.verbose:
+        print(f"Font detected: {LABEL_TO_FONT_NAME[font_label]}")
 
     # Solve the Sudoku board
     solved_board = profiler.profile(
@@ -111,7 +115,7 @@ def main():
         render_solution_overlay,
         solved_board,
         empty_positions,
-        font,
+        font_label,
         colour=bgr(args.colour)
     )
 

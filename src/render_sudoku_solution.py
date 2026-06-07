@@ -2,19 +2,7 @@ from PIL import Image, ImageDraw, ImageFont
 import cv2
 import numpy as np
 
-# The paths of the fonts
-FONT_PATHS = [
-    "/System/Library/Fonts/Helvetica.ttc",
-    "/System/Library/Fonts/Supplemental/AppleGothic.ttf",
-    "/System/Library/Fonts/Supplemental/Arial.ttf",
-    "/System/Library/Fonts/Supplemental/Georgia.ttf",
-    "/System/Library/Fonts/Times.ttc",
-]
-
-
-FONT_TO_LABEL = {path : idx for idx, path in enumerate(FONT_PATHS)}
-
-LABEL_TO_FONT = {idx : path for idx, path in enumerate(FONT_PATHS)}
+from src.font import LABEL_TO_FONT
 
 def render_solution_overlay(
     solved_board: list[list[int]],
@@ -30,6 +18,7 @@ def render_solution_overlay(
     Args:
         solved_board: The solved Sudoku board
         empty_positions: A list of coordinates that represent empty cells
+        font_label: The label of the font used in the input image
         board_size: The size of the board (default is 450)
         FONT_SCALE: The scale of the font (default is 1.2)
         colour: The RGB colour used to draw the digits (default is red)
@@ -51,6 +40,7 @@ def render_solution_overlay(
     font_size = int(cell_size * 0.6 * FONT_SCALE)
     font = ImageFont.truetype(font_path, font_size)
 
+    # Draw each digit on its cell
     for r, c in empty_positions:
 
         digit = str(solved_board[r][c])
@@ -58,18 +48,14 @@ def render_solution_overlay(
         x = c * cell_size
         y = r * cell_size
 
-        # Get text bounding box (replacement for cv2.getTextSize)
-        bbox = draw.textbbox((0, 0), digit, font=font)
-        text_w = bbox[2] - bbox[0]
-        text_h = bbox[3] - bbox[1]
+        draw.text(
+            (x + cell_size / 2, y + cell_size / 2),
+            digit,
+            font=font,
+            fill=colour,
+            anchor="mm"
+        )
 
-        # Center text inside cell
-        text_x = x + (cell_size - text_w) // 2
-        text_y = y + (cell_size - text_h) // 2
-
-        draw.text((text_x, text_y), digit, font=font, fill=colour)
-
-    # Convert back to OpenCV format (BGR)
     return np.array(img)
 
 def overlay_solution_on_board(img: np.ndarray, overlay: np.ndarray, M: np.ndarray) -> np.ndarray:
