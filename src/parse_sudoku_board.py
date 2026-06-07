@@ -162,13 +162,14 @@ def is_valid_sudoku(board: list[list[int]]) -> bool:
 
     return True
 
-def parse_sudoku_board(board: np.ndarray, model: tf.keras.Model) -> tuple[list[list[int]], list[tuple[int, int]]]:
+def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model: tf.keras.Model) -> tuple[list[list[int]], list[tuple[int, int]]]:
     """
     Parse a 9x9 grid image into a 2D list of predicted digits using OCR
 
     Args:
         board: A numpy array representing the full board image
-        model: The pre-trained OCR Keras model
+        ocr_model: The OCR Keras model
+        font_model: The font detection Keras model
 
     Returns:
         tuple:
@@ -306,7 +307,7 @@ def parse_sudoku_board(board: np.ndarray, model: tf.keras.Model) -> tuple[list[l
         )
 
         # Predict the digits in a single batch
-        predictions = model.predict(batch_array, verbose=0)
+        predictions = ocr_model.predict(batch_array, verbose=0)
         predicted_digits = np.argmax(predictions, axis=1)
 
         # Put the prediction results back into grid

@@ -31,7 +31,8 @@ def main():
 
     # Set the default model path
     ROOT_DIR = Path(__file__).resolve().parent
-    MODEL_PATH = ROOT_DIR / "models" / "digit_recognition_model_TMNIST.keras"
+    OCR_MODEL_PATH = ROOT_DIR / "models" / "digit_recognition_model_TMNIST.keras"
+    FONT_MODEL_PATH = ROOT_DIR / "models" / "font_recognition_MobileNetV2.keras"
 
     # Create a parser
     parser = argparse.ArgumentParser(prog="SudoVisionCruncher", description="Hello, user:")
@@ -40,7 +41,8 @@ def main():
     parser.add_argument("image_path", type=Path, help="The path of the Sudoku image")
 
     # Optional argument(s)
-    parser.add_argument("-m", "--model-path", type=Path, default=MODEL_PATH, help="The file path of the OCR model")
+    parser.add_argument("-m", "--ocr-model-path", type=Path, default=OCR_MODEL_PATH, help="The file path of the OCR model")
+    parser.add_argument("-f", "--font-model-path", type=Path, default=FONT_MODEL_PATH, help="The file path of the font detection model")
     parser.add_argument("-V", "--verbose", action="store_true", default=False, help="Print the pipeline profile summary")
     parser.add_argument("--output", "-o", help="The output path", default=None)
     parser.add_argument("--colour", "-c", type=str, help="Overlay colour", default='red')
@@ -52,16 +54,25 @@ def main():
     if not args.image_path.exists():
         parser.error(f"Image not found: {args.image_path}")
 
-    if not args.model_path.exists():
-        parser.error(f"Model not found: {args.model_path}")
+    if not args.ocr_model_path.exists():
+        parser.error(f"OCR model not found: {args.ocr_model_path}")
+
+    if not args.font_model_path.exists():
+        parser.error(f"Font detection model not found: {args.font_model_path}")
 
     profiler = PipelineProfiler()
 
     # Load the model
-    model = profiler.profile(
+    ocr_model = profiler.profile(
         "Load model",
         load_model,
-        str(args.model_path),
+        str(args.ocr_model_path),
+        args.verbose
+    )
+    font_model = profiler.profile(
+        "Load model",
+        load_model,
+        str(args.font_model_path),
         args.verbose
     )
 
@@ -83,7 +94,8 @@ def main():
         "OCR",
         parse_sudoku_board,
         flatten_img,
-        model
+        ocr_model,
+        font_model
     )
 
     # Solve the Sudoku board
