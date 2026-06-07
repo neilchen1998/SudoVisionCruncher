@@ -560,10 +560,8 @@ def generate_digit_image(digit: int) -> tuple[np.ndarray, int]:
     # Select random font size
     font_size = random.randint(30, 60)
 
-    try:
-        font = ImageFont.truetype(font_path, font_size)
-    except:
-        font = ImageFont.load_default()
+    # Get the font
+    font = ImageFont.truetype(font_path, font_size)
 
     # Conver the digit to string format
     text = str(digit)
