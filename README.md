@@ -652,6 +652,88 @@ Prefetching enable the model to prepare the dataset for the pipeline at $s+1$ wh
 train_ds = train_ds.batch(BATCH_SIZE).prefetch(tf.data.AUTOTUNE)
 ```
 
+## Find the Largest Font that Fits a Given Canvas Size
+
+When we render training dataset, we would like to generate various sizes of digits.
+In order to do so, we randomly select the target scales and find the font sizes accordingly.
+The target scale is the ratio of the digit with respect to the canvas size.
+However, it is not trivial since we need to figure out the font size in order to achieve this outcome.
+Therefore, we need to write a function like the one below to find the best font size to use in order for the digit to be big enough.
+
+```python
+def scale_font_to_target(draw: ImageDraw.Draw, font_path: str, text: str, canvas_size: int, target_scale: float = 0.8) -> ImageFont.FreeTypeFont:
+    """
+    Finds the largest font size that fits the text within a canvas with given dimension.
+
+    Args:
+        draw: The 2D drawing interface
+        font_path: The file path of the font
+        text: The text to put on the canvas
+        img_size: The size of the canvas
+        target_scale: The desired scale (default to 0.8)
+
+    Returns:
+        ImageFont.FreeTypeFont: The largest font size
+    """
+
+    target = canvas_size * target_scale
+
+    low, high = 10, 300
+    best_font = ImageFont.truetype(font_path, low)
+
+    # Use binary search
+    # The search range is [low, high]
+    while low <= high:
+        mid = (low + high) // 2
+        font = ImageFont.truetype(font_path, mid)
+
+        left, top, right, bottom = draw.textbbox((0, 0), text, font=font)
+        w, h = right - left, bottom - top
+
+        if max(w, h) <= target:
+            best_font = font
+            low = mid + 1
+        else:
+            high = mid - 1
+
+    return best_font
+```
+
+Here, we are doing a binary search that find the best font size ([10, 300]) to use in order to take up the canvas with a given ratio.
+
+The following is a function that *scale_font_to_target* follows:
+
+```python
+def find_max_value_satisfying(low: int, high: int, condition: Callable[[int], bool]) -> int:
+    """
+    Finds the maximum value that satisfied the given condition.
+
+    Args:
+        low: The lower bound of the search range (inclusive).
+        high: The uppoer bound of the search range (inclusive).
+        condition: A lambda function that takes an integer and returns a boolean.
+
+    Returns:
+        int: The maximum value in [low, high] that satisfies the given condition.
+    """
+
+    best = low
+    while low <= high:
+        mid = low + (high - low) // 2
+
+        if condition(mid):
+            best = mid
+            low = mid + 1
+        else:
+            high = mid - 1
+
+    return best
+```
+
+One can test the funciton by running the test cases in *test/test_helper**.
+
+The condition in *scale_font_to_target* is that the max value of width or height of the bounding box that a font produces is no smaller than the product of **target_scale** and **canvas_size**.
+
 ## Reference
 
 * [difflib](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher)
