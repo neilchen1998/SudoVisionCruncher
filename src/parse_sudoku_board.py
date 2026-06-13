@@ -1,6 +1,9 @@
+from collections import Counter
+from tensorflow import keras
 import cv2
 import numpy as np
 import tensorflow as tf
+import matplotlib.pyplot as plt
 
 def flatten_board(img: np.ndarray, N: int = 450) -> tuple[np.ndarray, np.ndarray]:
 
@@ -162,13 +165,51 @@ def is_valid_sudoku(board: list[list[int]]) -> bool:
 
     return True
 
-def parse_sudoku_board(board: np.ndarray, model: tf.keras.Model) -> tuple[list[list[int]], list[tuple[int, int]]]:
+def preprocess_digit(digit: np.ndarray, digit_target_size: int, canvas_size: int) -> np.ndarray:
+    """
+    Resizes a digit while preserving aspect ratio,
+    centers it on a square canvas,
+    and normalizs pixel values to [0, 1].
+
+    Args:
+        digit: Grayscale digit image
+        digit_target_size: Size of the longest side after resizing
+        canvas_size: Size of the square model input canvas
+
+    Returns:
+        np.ndarray: Normalized image
+    """
+    h_digit, w_digit = digit.shape
+
+    # Resize the digit to DIGIT_TARGET_SIZE but also preserve the aspect
+    scale = digit_target_size / max(h_digit, w_digit)
+    new_w = max(1, int(w_digit * scale))
+    new_h = max(1, int(h_digit * scale))
+
+    resized_digit = cv2.resize(digit, (new_w, new_h), interpolation=cv2.INTER_AREA)
+
+    canvas = np.zeros((canvas_size, canvas_size), dtype=np.uint8)
+
+    x_offset = (canvas_size - new_w) // 2
+    y_offset = (canvas_size - new_h) // 2
+
+    # Put the digit in the center of a canvas
+    canvas[
+        y_offset:y_offset + new_h,
+        x_offset:x_offset + new_w
+    ] = resized_digit
+
+    # Normalize to [0, 1]
+    return canvas.astype(np.float32) / 255.0
+
+def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model: tf.keras.Model) -> tuple[list[list[int]], list[tuple[int, int, int]]]:
     """
     Parse a 9x9 grid image into a 2D list of predicted digits using OCR
 
     Args:
         board: A numpy array representing the full board image
-        model: The pre-trained OCR Keras model
+        ocr_model: The OCR Keras model
+        font_model: The font detection Keras model
 
     Returns:
         tuple:
@@ -178,7 +219,8 @@ def parse_sudoku_board(board: np.ndarray, model: tf.keras.Model) -> tuple[list[l
 
     # Parameters
     MARGIN_RATIO = 0.2
-    MODEL_INPUT_SIZE = 28
+    OCR_MODEL_INPUT_SIZE = 28
+    FONT_MODEL_INPUT_SIZE = 64
     DIGIT_TARGET_SIZE = 18
     THRESH_BLOCK_SIZE = 11
     THRESH_C = 2
@@ -186,8 +228,11 @@ def parse_sudoku_board(board: np.ndarray, model: tf.keras.Model) -> tuple[list[l
     # Find the size of the cell
     cell_size = board.shape[0] // 9
 
-    # For batch prediction
-    batch_inputs = []
+    # For batch prediction (OCR)
+    batch_inputs_ocr = []
+
+    # For batch prediction (font)
+    batch_inputs_font = []
 
     # For reconstruction
     positions = []
@@ -269,52 +314,62 @@ def parse_sudoku_board(board: np.ndarray, model: tf.keras.Model) -> tuple[list[l
             # Crop the digit
             digit = thresh[y:y+h, x:x+w]
 
-            # Resize the digit to DIGIT_TARGET_SIZE but also preserve the aspect
-            h_digit, w_digit = digit.shape
-            scale = DIGIT_TARGET_SIZE / max(h_digit, w_digit)
-            new_w = max(1, int(w_digit * scale))
-            new_h = max(1, int(h_digit * scale))
-            resized_digit = cv2.resize(digit, (new_w, new_h))
-
             # Put the digit in the center of a 28x28 canvas
-            canvas = np.zeros(
-                (MODEL_INPUT_SIZE, MODEL_INPUT_SIZE),
-                dtype=np.uint8
+            cell_input = preprocess_digit(
+                digit,
+                DIGIT_TARGET_SIZE,
+                OCR_MODEL_INPUT_SIZE
             )
-            x_offset = (MODEL_INPUT_SIZE - new_w) // 2
-            y_offset = (MODEL_INPUT_SIZE - new_h) // 2
-            canvas[
-                y_offset:y_offset+new_h,
-                x_offset:x_offset+new_w
-            ] = resized_digit
 
-            # Normalize
-            cell_input = (canvas.astype("float32") / 255.0)
-
-            batch_inputs.append(cell_input)
+            # Append the cell to the OCR list
+            batch_inputs_ocr.append(cell_input)
             positions.append((r, c))
 
-    # Batch prediction
-    if batch_inputs:
+            # Font
+            cell_input_font = preprocess_digit(digit, int(FONT_MODEL_INPUT_SIZE * 0.8), FONT_MODEL_INPUT_SIZE)
+
+            # Append the cell to the font list
+            batch_inputs_font.append(cell_input_font)
+
+    # Batch prediction (OCR)
+    if batch_inputs_ocr:
 
         # Reshape inputs into a numpy array
-        batch_array = np.array(batch_inputs).reshape(
+        batch_array_digit = np.array(batch_inputs_ocr).reshape(
             -1, # the original shape
-            MODEL_INPUT_SIZE,
-            MODEL_INPUT_SIZE,
+            OCR_MODEL_INPUT_SIZE,
+            OCR_MODEL_INPUT_SIZE,
             1
         )
 
         # Predict the digits in a single batch
-        predictions = model.predict(batch_array, verbose=0)
+        predictions = ocr_model.predict(batch_array_digit, verbose=0)
         predicted_digits = np.argmax(predictions, axis=1)
 
         # Put the prediction results back into grid
         for (r, c), digit in zip(positions, predicted_digits):
             grid[r][c] = int(digit)
 
+    # Batch prediction (font)
+    if batch_inputs_font:
+
+        # Reshape inputs into a numpy array
+        batch_array_font = np.array(batch_inputs_font).reshape(
+            -1, # the original shape
+            FONT_MODEL_INPUT_SIZE,
+            FONT_MODEL_INPUT_SIZE,
+            1
+        )
+
+        # Predict the digits in a single batch
+        predictions = font_model.predict(batch_array_font, verbose=0)
+        predicted_fonts = np.argmax(predictions, axis=1)
+
+        # Make the final font prediction based on the most popular vote
+        most_common_font = Counter(predicted_fonts).most_common(1)[0][0]
+
     # Validation
     if not is_valid_sudoku(grid):
-        raise ValueError("Invalid Sudoku grid: {grid}.")
+        raise ValueError(f"Invalid Sudoku grid: {grid}.")
 
-    return grid, empty_positions
+    return grid, empty_positions, most_common_font

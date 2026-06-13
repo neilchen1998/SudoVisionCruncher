@@ -2,6 +2,8 @@
 
 ## Summary
 
+Computer vision pipeline that detects unsolved Sudoku puzzles from images, solves them, and renders the solution back onto the original image using a matching font.
+
 ## Requirements
 
 * [uv](https://docs.astral.sh/uv/)
@@ -96,6 +98,17 @@ uv run ./main.py ./data/sudoku.png -o example/sudoku-result.png
 Saved output:
 
 ![Sudoku sample result](example/sudoku-result.png)
+
+Font detection is implemented in the pipeline, therefore the output font is based on the font in the input image.
+Currently, the training dataset for font detection is comprised of: Arial, Georgia, and Times since those three fonts are the most used font.
+
+An example output with Georgia font:
+
+![Sudoku with Georgia font](example/sudoku-georgia-solution.png)
+
+An example output with Arial font:
+
+![Sudoku with Arial font](example/sudoku-arial-solution.png)
 
 ## Pipeline
 
@@ -268,16 +281,16 @@ cell_input = (
 
 Voilà, now we have prepared the cell for our OCR and we can use the pretrained model to figure out the digit of the cell.
 
-## Batch Prediction
+## Batch Prediction for Digits
 
 We can utilize batches to predict our digits to speed up the process.
-We create two lists, i.e., **batch_inputs** and **positions** to store the digit inputs and the positions of those images so that we can reconstruct the board after we predict those digits.
+We create two lists, i.e., **batch_inputs_ocr** and **positions** to store the digit inputs and the positions of those images so that we can reconstruct the board after we predict those digits.
 
 Before we pass the batch of all images of digits, we need to resize it to a numpy array.
-Note that the first argument is -1 in *reshape* is because we want to preserve the original shape (in this case, it is the number of samples in **batch_inputs**).
+Note that the first argument is -1 in *reshape* is because we want to preserve the original shape (in this case, it is the number of samples in **batch_inputs_ocr**).
 
 ```python
-batch_array = np.array(batch_inputs).reshape(
+batch_array_digit = np.array(batch_inputs_ocr).reshape(
     -1, # the original shape
     MODEL_INPUT_SIZE,
     MODEL_INPUT_SIZE,
@@ -288,9 +301,23 @@ batch_array = np.array(batch_inputs).reshape(
 Then we can just call *predict* and the model will return a numpy array with all the predicitons.
 
 ```python
-predictions = model.predict(batch_array, verbose=0)
+predictions = model.predict(batch_array_digit, verbose=0)
 predicted_digits = np.argmax(predictions, axis=1)
 ```
+
+## Batch Prediction for Fonts
+
+We also utilize batches to predict our fonts to speed up the process.
+The process is almost identical to what we do for digit prediction.
+However, we make the final font prediction based on the most popular vote, i.e., we predict all the fonts from all digits on the board and we make the final prediction by the most vote that we get.
+
+The implementation can be found below:
+
+```
+most_common_font = Counter(predicted_fonts).most_common(1)[0][0]
+```
+
+**Counter** turns list into dictionaries. By calling *most_common(n)*, we can get the most common $n$ pair in the dictionary. Since we only care about the most common pair, we call *[0]* and since we only care about the key, we call another *[0]*.
 
 ## Overlay Solutions
 
@@ -508,9 +535,240 @@ And the user will get **ValueError** and with the following prompt:
 ValueError: Unknown colour: gren. Did you mean 'green'?
 ```
 
+##
+
+To find the file path of a particular font, let say **arial**, on the system, run:
+
+```zsh
+$ sudo find /System/Library /Library -iname "*arial*"
+```
+
+On Mac, you might get:
+
+```zsh
+/System/Library/Templates/Data/Library/Fonts/Arial Unicode.ttf
+```
+
+## Generate Infinite Synthetic Data for Training
+
+We can generate our own dataset to train our model to recognize fonts instead of using dataset from others.
+There are two ways to achieve this, one is generate thousands if not hundered images and store them on the disk, or use a generator to generate infinite dataset.
+In this repo, we are using the latter approach.
+
+In order to call *tf.data.Dataset.from_generator()*, we need to first create a generator that generates dataset.
+
+
+Before we create a generator, we need to write a function that generates an image and its label.
+The function is as follow:
+
+```python
+def generate_digit_image(digit: int) -> tuple[np.ndarray, int]:
+    """
+    Generates a given digit on the image with random augmentation.
+
+    Args:
+        digit: The given digit
+
+    Returns:
+        tuple:
+            np.ndarray: The image
+            int: The label of the image (zero-based index)
+    """
+
+    # Create a greyscale image in grey mode
+    img = Image.new("L", (IMG_SIZE, IMG_SIZE), 255)
+    draw = ImageDraw.Draw(img)
+
+    # Select a random font
+    font_path = random.choice(FONT_PATHS)
+
+    font_label = FONT_TO_LABEL[font_path]
+
+    # Select random font size
+    font_size = random.randint(30, 60)
+
+    # Get the font
+    font = ImageFont.truetype(font_path, font_size)
+
+    # Conver the digit to string format
+    text = str(digit)
+
+    # Find the width and height of the text bounding box
+    left, top, right, bottom = draw.textbbox((0, 0), text, font=font)
+    w = right - left
+    h = bottom - top
+
+    # Determine the position of the text
+    x = (IMG_SIZE - w) // 2 + random.randint(-5, 5)
+    y = (IMG_SIZE - h) // 2 + random.randint(-5, 5)
+
+    draw.text((x, y), text, fill='black', font=font)
+
+    # Blur the image
+    if random.random() < 0.4:
+        img = img.filter(ImageFilter.GaussianBlur(random.uniform(0, 1.5)))
+
+    # Convert the image to an array
+    arr = np.array(img).astype(np.float32)
+
+    # Apply noises
+    if random.random() < 0.5:
+        arr += np.random.normal(0, 20, arr.shape)
+
+    # Clip all pixels of the image between 0 and 255
+    arr = np.clip(arr, 0, 255)
+
+    # Convert the image to RGB
+    arr = np.stack([arr, arr, arr], axis=-1)
+
+    return arr.astype(np.float32), font_label
+```
+
+Here we first create a black canvas and pick a random font and font size and draw it at the center of the canvas.
+We then augment the image by blurring and applying noises since input images from the real world will not be ideal.
+Finally, we convert the image from a single channel to RGB format and return it along with its font label.
+
+We then need to create a generator that yields an image and its label so that it can be consumed by *tf.data.Dataset.from_generator()*.
+
+A generator will look something like this:
+
+```python
+def data_generator():
+    """
+    Data generator wrapper that yields an RGB image and its label
+
+    Yields:
+        tuple:
+            np.ndarray: An RGB image that contains an augmented digit
+            int: The label of the image (zero-based index)
+    """
+
+    while True:
+        digit = random.choice(DIGITS)
+        img, label = generate_digit_image(digit)
+        yield img, label
+```
+
+Note that we need to randomly choice a digit so that the dataset can cover all the digits.
+
+Finally, we need to define the signature so *tf.data.Dataset.from_generator()* knows what it is dealing with:
+
+```python
+# Describe what the custom generator will yield
+output_signature = (
+    tf.TensorSpec(shape=(IMG_SIZE, IMG_SIZE, 3), dtype=tf.float32), # the image
+    tf.TensorSpec(shape=(), dtype=tf.int32) # the label
+)
+```
+
+We can then pass all things to it:
+
+```python
+# Create the training dataset from the generator
+train_ds = tf.data.Dataset.from_generator(
+    data_generator,
+    output_signature=output_signature
+)
+```
+
+We can use *prefetch()* to improve performance.
+Prefetching enable the model to prepare the dataset for the pipeline at $s+1$ while the model is being trained at $s$.
+
+```python
+# Use prefetching to improve performance
+train_ds = train_ds.batch(BATCH_SIZE).prefetch(tf.data.AUTOTUNE)
+```
+
+## Find the Largest Font that Fits a Given Canvas Size
+
+When we render training dataset, we would like to generate various sizes of digits.
+In order to do so, we randomly select the target scales and find the font sizes accordingly.
+The target scale is the ratio of the digit with respect to the canvas size.
+However, it is not trivial since we need to figure out the font size in order to achieve this outcome.
+Therefore, we need to write a function like the one below to find the best font size to use in order for the digit to be big enough.
+
+```python
+def scale_font_to_target(draw: ImageDraw.Draw, font_path: str, text: str, canvas_size: int, target_scale: float = 0.8) -> ImageFont.FreeTypeFont:
+    """
+    Finds the largest font size that fits the text within a canvas with given dimension.
+
+    Args:
+        draw: The 2D drawing interface
+        font_path: The file path of the font
+        text: The text to put on the canvas
+        img_size: The size of the canvas
+        target_scale: The desired scale (default to 0.8)
+
+    Returns:
+        ImageFont.FreeTypeFont: The largest font size
+    """
+
+    target = canvas_size * target_scale
+
+    low, high = 10, 300
+    best_font = ImageFont.truetype(font_path, low)
+
+    # Use binary search
+    # The search range is [low, high]
+    while low <= high:
+        mid = (low + high) // 2
+        font = ImageFont.truetype(font_path, mid)
+
+        left, top, right, bottom = draw.textbbox((0, 0), text, font=font)
+        w, h = right - left, bottom - top
+
+        if max(w, h) <= target:
+            best_font = font
+            low = mid + 1
+        else:
+            high = mid - 1
+
+    return best_font
+```
+
+Here, we are doing a binary search that find the best font size ([10, 300]) to use in order to take up the canvas with a given ratio.
+
+The following is a function that *scale_font_to_target* follows:
+
+```python
+def find_max_value_satisfying(low: int, high: int, condition: Callable[[int], bool]) -> int:
+    """
+    Finds the maximum value that satisfied the given condition.
+
+    Args:
+        low: The lower bound of the search range (inclusive).
+        high: The uppoer bound of the search range (inclusive).
+        condition: A lambda function that takes an integer and returns a boolean.
+
+    Returns:
+        int: The maximum value in [low, high] that satisfies the given condition.
+    """
+
+    best = low
+    while low <= high:
+        mid = low + (high - low) // 2
+
+        if condition(mid):
+            best = mid
+            low = mid + 1
+        else:
+            high = mid - 1
+
+    return best
+```
+
+One can test the funciton by running the test cases in *test/test_helper**.
+
+The condition in *scale_font_to_target* is that the max value of width or height of the bounding box that a font produces is no smaller than the product of **target_scale** and **canvas_size**.
+
 ## Reference
 
+* [Counter](https://docs.python.org/3/library/collections.html#collections.Counter)
 * [difflib](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher)
+* [From Generator](https://www.tensorflow.org/api_docs/python/tf/data/Dataset#from_generator)
 * [Image Thresholding ](https://opencv24-python-tutorials.readthedocs.io/en/latest/py_tutorials/py_imgproc/py_thresholding/py_thresholding.html)
+* [Prefetching](https://www.tensorflow.org/guide/data_performance)
+* [Puzzle Generator](https://puzzlegenerator.org/sudoku-generator)
 * [sudoku-5](https://mathsphere.co.uk/downloads/sudoku/10202-medium.pdf)
+* [Synthetic Data Generation for AI Models](https://www.runpod.io/articles/guides/synthetic-data-generation-creating-high-quality-training-datasets-for-ai-model-development)
 * [TMNIST](https://www.kaggle.com/datasets/nimishmagre/tmnist-typeface-mnist)

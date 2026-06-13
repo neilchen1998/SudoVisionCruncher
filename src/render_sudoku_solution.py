@@ -1,28 +1,46 @@
+from PIL import Image, ImageDraw, ImageFont
 import cv2
 import numpy as np
 
-def render_solution_overlay(solved_board: list[list[int]], empty_positions: list[tuple[int, int]],
-                            board_size:int = 450, FONT_FACE:int = cv2.FONT_HERSHEY_SCRIPT_SIMPLEX,
-                            FONT_SCALE:float = 1.2, THICKNESS:int = 2, colour: tuple[int, int, int] = (0, 255, 255)) -> np.ndarray:
+from src.font import LABEL_TO_FONT
+
+def render_solution_overlay(
+    solved_board: list[list[int]],
+    empty_positions: list[tuple[int, int]],
+    font_label: int,
+    board_size: int = 450,
+    FONT_SCALE: float = 1.2,
+    colour: tuple[int, int, int] = (255, 0, 0),
+) -> np.ndarray:
     """
-    Renders the solution on the given image
+    Renders Sudoku solution overlay using PIL fonts.
 
     Args:
         solved_board: The solved Sudoku board
         empty_positions: A list of coordinates that represent empty cells
+        font_label: The label of the font used in the input image
         board_size: The size of the board (default is 450)
         FONT_SCALE: The scale of the font (default is 1.2)
-        THICKNESS: The thickness of the font (default is 2.0)
-        colour: The BGR colour used to draw the digits (default is red)
+        colour: The RGB colour used to draw the digits (default is red)
 
     Returns:
         np.ndarray: The overlay image
     """
 
-    overlay = np.zeros((board_size, board_size, 3), dtype=np.uint8)
+    # Get the path of the font
+    font_path = LABEL_TO_FONT[font_label]
+
+    # Create blank image
+    img = Image.new("RGB", (board_size, board_size), (0, 0, 0))
+    draw = ImageDraw.Draw(img)
 
     cell_size = board_size // 9
 
+    # Load the font
+    font_size = int(cell_size * 0.6 * FONT_SCALE)
+    font = ImageFont.truetype(font_path, font_size)
+
+    # Draw each digit on its cell
     for r, c in empty_positions:
 
         digit = str(solved_board[r][c])
@@ -30,30 +48,15 @@ def render_solution_overlay(solved_board: list[list[int]], empty_positions: list
         x = c * cell_size
         y = r * cell_size
 
-        # Find the width and the height of the text based on the font, scale, etc.
-        (text_w, text_h), _ = cv2.getTextSize(
+        draw.text(
+            (x + cell_size / 2, y + cell_size / 2),
             digit,
-            FONT_FACE,
-            FONT_SCALE,
-            THICKNESS,
+            font=font,
+            fill=colour,
+            anchor="mm"
         )
 
-        # Find the text position by centering the text within the box using half the text width and height offsets
-        text_x = x + (cell_size - text_w) // 2
-        text_y = y + (cell_size + text_h) // 2
-
-        cv2.putText(
-            overlay,
-            digit,
-            (text_x, text_y),
-            FONT_FACE,
-            FONT_SCALE,
-            colour,    # (B, G, R)
-            THICKNESS,
-            cv2.LINE_AA # anti-aliased line type.
-        )
-
-    return overlay
+    return np.array(img)
 
 def overlay_solution_on_board(img: np.ndarray, overlay: np.ndarray, M: np.ndarray) -> np.ndarray:
     """
