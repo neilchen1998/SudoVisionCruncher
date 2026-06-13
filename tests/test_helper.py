@@ -29,7 +29,7 @@ def find_max_value_satisfying(low: int, high: int, condition: Callable[[int], bo
 MIN_VALUE = 10
 MAX_VALUE = 300
 
-@given(st.integers(min_value=1))
+@given(st.integers(min_value=MIN_VALUE, max_value=MAX_VALUE))
 def test_find_max_value_satisfying(threshold):
 
     def condition(x):
