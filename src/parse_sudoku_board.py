@@ -328,14 +328,6 @@ def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model:
             # Font
             cell_input_font = preprocess_digit(digit, int(FONT_MODEL_INPUT_SIZE * 0.8), FONT_MODEL_INPUT_SIZE)
 
-            ## Print the input tot the font detection model
-            # fig, ax = plt.subplots(figsize=(6, 6))
-            # ax.imshow(cv2.cvtColor(cell_input_font, cv2.COLOR_BGR2RGB))  # NOTE: OpenCV uses BGR but matplotlib uses RGB
-            # ax.set_title("Solved Sudoku", pad=2)
-            # ax.axis('off')
-            # plt.tight_layout(pad=1.0)
-            # plt.show()
-
             # Append the cell to the font list
             batch_inputs_font.append(cell_input_font)
 
@@ -343,7 +335,7 @@ def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model:
     if batch_inputs_ocr:
 
         # Reshape inputs into a numpy array
-        batch_array = np.array(batch_inputs_ocr).reshape(
+        batch_array_digit = np.array(batch_inputs_ocr).reshape(
             -1, # the original shape
             OCR_MODEL_INPUT_SIZE,
             OCR_MODEL_INPUT_SIZE,
@@ -351,7 +343,7 @@ def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model:
         )
 
         # Predict the digits in a single batch
-        predictions = ocr_model.predict(batch_array, verbose=0)
+        predictions = ocr_model.predict(batch_array_digit, verbose=0)
         predicted_digits = np.argmax(predictions, axis=1)
 
         # Put the prediction results back into grid

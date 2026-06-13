@@ -268,16 +268,16 @@ cell_input = (
 
 Voilà, now we have prepared the cell for our OCR and we can use the pretrained model to figure out the digit of the cell.
 
-## Batch Prediction
+## Batch Prediction for Digits
 
 We can utilize batches to predict our digits to speed up the process.
-We create two lists, i.e., **batch_inputs** and **positions** to store the digit inputs and the positions of those images so that we can reconstruct the board after we predict those digits.
+We create two lists, i.e., **batch_inputs_ocr** and **positions** to store the digit inputs and the positions of those images so that we can reconstruct the board after we predict those digits.
 
 Before we pass the batch of all images of digits, we need to resize it to a numpy array.
-Note that the first argument is -1 in *reshape* is because we want to preserve the original shape (in this case, it is the number of samples in **batch_inputs**).
+Note that the first argument is -1 in *reshape* is because we want to preserve the original shape (in this case, it is the number of samples in **batch_inputs_ocr**).
 
 ```python
-batch_array = np.array(batch_inputs).reshape(
+batch_array_digit = np.array(batch_inputs_ocr).reshape(
     -1, # the original shape
     MODEL_INPUT_SIZE,
     MODEL_INPUT_SIZE,
@@ -288,9 +288,23 @@ batch_array = np.array(batch_inputs).reshape(
 Then we can just call *predict* and the model will return a numpy array with all the predicitons.
 
 ```python
-predictions = model.predict(batch_array, verbose=0)
+predictions = model.predict(batch_array_digit, verbose=0)
 predicted_digits = np.argmax(predictions, axis=1)
 ```
+
+## Batch Prediction for Fonts
+
+We also utilize batches to predict our fonts to speed up the process.
+The process is almost identical to what we do for digit prediction.
+However, we make the final font prediction based on the most popular vote, i.e., we predict all the fonts from all digits on the board and we make the final prediction by the most vote that we get.
+
+The implementation can be found below:
+
+```
+most_common_font = Counter(predicted_fonts).most_common(1)[0][0]
+```
+
+**Counter** turns list into dictionaries. By calling *most_common(n)*, we can get the most common $n$ pair in the dictionary. Since we only care about the most common pair, we call *[0]* and since we only care about the key, we call another *[0]*.
 
 ## Overlay Solutions
 
@@ -736,6 +750,7 @@ The condition in *scale_font_to_target* is that the max value of width or height
 
 ## Reference
 
+* [Counter](https://docs.python.org/3/library/collections.html#collections.Counter)
 * [difflib](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher)
 * [From Generator](https://www.tensorflow.org/api_docs/python/tf/data/Dataset#from_generator)
 * [Image Thresholding ](https://opencv24-python-tutorials.readthedocs.io/en/latest/py_tutorials/py_imgproc/py_thresholding/py_thresholding.html)
