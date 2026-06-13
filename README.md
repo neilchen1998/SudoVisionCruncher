@@ -2,6 +2,8 @@
 
 ## Summary
 
+Computer vision pipeline that detects unsolved Sudoku puzzles from images, solves them, and renders the solution back onto the original image using a matching font.
+
 ## Requirements
 
 * [uv](https://docs.astral.sh/uv/)
@@ -96,6 +98,17 @@ uv run ./main.py ./data/sudoku.png -o example/sudoku-result.png
 Saved output:
 
 ![Sudoku sample result](example/sudoku-result.png)
+
+Font detection is implemented in the pipeline, therefore the output font is based on the font in the input image.
+Currently, the training dataset for font detection is comprised of: Arial, Georgia, and Times since those three fonts are the most used font.
+
+An example output with Georgia font:
+
+![Sudoku with Georgia font](example/sudoku-georgia-solution.png)
+
+An example output with Arial font:
+
+![Sudoku with Arial font](example/sudoku-arial-solution.png)
 
 ## Pipeline
 
