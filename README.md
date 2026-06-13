@@ -67,10 +67,16 @@ Run the main script with specific colour (orange, yellow, etc.):
 uv run ./main.py <sudoku.png> -c <colour>
 ```
 
-Run the **pytest**:
+Run all the **pytest** test cases:
 
 ```zsh
 uv run pytest -o pythonpath=.
+```
+
+Run a specific **pytest** file:
+
+```zsh
+uv run pytest -o pythonpath=. tests/<test_file>
 ```
 
 ## Example Output
