@@ -24,6 +24,7 @@ jobs:
         env:
           # Test files for GitHub Action to run
           TEST_FILES: |
+            tests/unit/test_colours.py
             tests/unit/test_io.py
             tests/unit/test_solver.py
             tests/unit/test_utils.py
