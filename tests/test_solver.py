@@ -3,7 +3,7 @@ import random
 from hypothesis import given, strategies as st
 
 from src.solver import solve_sudoku
-from src.parse_sudoku_board import is_valid_sudoku
+from src.sudoku_utils import is_valid_sudoku
 
 EASY_PUZZLE = [
     [5,3,0,0,7,0,0,0,0],
