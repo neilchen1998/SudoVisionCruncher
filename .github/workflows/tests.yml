@@ -1,0 +1,27 @@
+name: Run Pytest Test Cases
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true # speeds up for future test runs
+
+      - name: Install all dependencies
+        run: uv sync --no-dev
+
+      - name: Run tests
+        run: uv run pytest -o pythonpath=. \
+          tests/test_board_io.py  \
+          tests/test_helper.py  \
+          tests/test_solver.py
