@@ -27,5 +27,5 @@ jobs:
             tests/unit/test_io.py
             tests/unit/test_solver.py
             tests/unit/test_utils.py
-        run: |
-          uv run --no-dev pytest $TEST_FILES
+
+        run: uv run --no-dev pytest $TEST_FILES
