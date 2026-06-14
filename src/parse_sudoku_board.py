@@ -1,9 +1,10 @@
 from collections import Counter
-from tensorflow import keras
 import cv2
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
+
+from src.sudoku_utils import is_valid_sudoku
 
 def flatten_board(img: np.ndarray, N: int = 450) -> tuple[np.ndarray, np.ndarray]:
 
@@ -105,65 +106,6 @@ def flatten_board(img: np.ndarray, N: int = 450) -> tuple[np.ndarray, np.ndarray
     flat_board = cv2.warpPerspective(grey, M, (N, N))
 
     return flat_board, M
-
-def is_valid_sudoku(board: list[list[int]]) -> bool:
-    """
-    Checks if a given Sudoku board is valid
-
-    Args:
-        board: A 9x9 list of integers representing the input Sudoku board
-
-    Returns:
-        bool: True if the Sudoku board is valid, False otherwise
-    """
-
-    def is_valid_sequence(seq: list[int]):
-
-        """
-        Checks if a given Sudoku sequence (row or column) is valid
-
-        Args:
-            seq: A list of integers representing the input Sudoku sequence
-
-        Returns:
-            bool: True if the Sudoku seqeunce board is valid, False otherwise
-        """
-
-        # Create a set
-        seen = set()
-
-        # Loop through all numbers in the list
-        for num in seq:
-            if num == 0:
-                continue
-            elif num in seen:
-                return False
-            else:
-                seen.add(num)
-        return True
-
-    # Check rows
-    for row in board:
-        if not is_valid_sequence(row):
-            return False
-
-    # Check columns
-    for col in range(9):
-        sequence = [board[row][col] for row in range(9)]
-        if not is_valid_sequence(sequence):
-            return False
-
-    # Check sub-grids
-    for i in range(0, 9, 3):
-        for j in range(0, 9, 3):
-
-            # Dissect the boad into a small grid and store all the numbers in the grid into a list
-            sequence = [board[x][y] for x in range(i, i + 3) for y in range(j, j + 3)]
-
-            if not is_valid_sequence(sequence):
-                return False
-
-    return True
 
 def preprocess_digit(digit: np.ndarray, digit_target_size: int, canvas_size: int) -> np.ndarray:
     """

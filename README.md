@@ -19,22 +19,10 @@ Download Python with **uv**:
 uv venv --python 3.11.15
 ```
 
-Activate the environment:
+Install the dependencies via **pyproject.toml**:
 
 ```zsh
-source .venv/bin/activate
-```
-
-Install the packages:
-
-```zsh
-uv pip install tensorflow
-```
-
-Install the packages via **requirements.txt**:
-
-```zsh
-uv pip install -r requirements.txt
+uv sync --group dev
 ```
 
 Deactivate the environment:

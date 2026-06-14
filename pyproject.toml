@@ -1,0 +1,35 @@
+[project]
+name = "sudovisioncruncher"
+version = "1.2.0"
+readme = "README.md"
+requires-python = "==3.11.15"
+
+dependencies = [
+    "hypothesis==6.155.2",
+    "matplotlib==3.11.0",
+    "numpy==1.26.4",
+    "opencv-python==4.10.0.84",
+    "Pillow==12.2.0",
+    "pytest==9.1.0",
+    "webcolors==25.10.0",
+]
+
+# For Devs
+[dependency-groups]
+dev = [
+    # For macOS with Apple Silicon
+    "tensorflow==2.18.0; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "tensorflow-metal==1.2.0; sys_platform == 'darwin' and platform_machine == 'arm64'",
+
+    # For Linux & Windows
+    "tensorflow==2.18.0; sys_platform == 'linux' or sys_platform == 'win32'",
+]
+
+# Pytest
+[tool.pytest.ini_options]
+pythonpath = "."
+testpaths = [
+    "tests/test_board_io.py",
+    "tests/test_helper.py",
+    "tests/test_solver.py"
+]
