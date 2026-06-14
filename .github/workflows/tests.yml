@@ -7,6 +7,15 @@ on:
 jobs:
   test:
     runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+
+        # Test files that GitHub Action will run
+        test_file: [
+          "tests/unit/test_io.py",
+          "tests/unit/test_solver.py",
+          "tests/unit/test_utils.py"
+        ]
 
     steps:
       - name: Checkout repository
@@ -21,4 +30,4 @@ jobs:
         run: uv sync --no-dev
 
       - name: Run unit tests
-        run: uv run pytest ./tests/unit/*
+        run: uv run pytest ${{ matrix.test_file }}
