@@ -2,7 +2,7 @@ from PIL import Image, ImageDraw, ImageFont
 import cv2
 import numpy as np
 
-from src.font import LABEL_TO_FONT
+from design.font import LABEL_TO_FONT
 
 def render_solution_overlay(
     solved_board: list[list[int]],

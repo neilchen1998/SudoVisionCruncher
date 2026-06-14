@@ -3,15 +3,15 @@ import pytest
 
 from pathlib import Path
 
-from src.digit_predict import run_digit_prediction_pipeline
+from vision.digit_predict import run_digit_prediction_pipeline
 
-def test_run_digit_prediction_pipeline():
+def test_run_digit_prediction_pipeline(request):
     """
     Tests run_digit_prediction_pipeline function
     """
 
     # Get the project directory (root)
-    ROOT_DIR = Path(__file__).resolve().parent.parent
+    ROOT_DIR = Path(request.config.rootpath)
 
     MODEL_PATH = ROOT_DIR / "models" / "digit_recognition_model.keras"
     IMAGE_PATH = ROOT_DIR / "data" / "nine.jpg"
