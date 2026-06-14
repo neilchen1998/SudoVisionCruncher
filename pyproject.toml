@@ -17,3 +17,12 @@ dependencies = [
 dev = [
     "tensorflow==2.21.0",
 ]
+
+# Pytest
+[tool.pytest.ini_options]
+pythonpath = "."
+testpaths = [
+    "tests/test_board_io.py",
+    "tests/test_helper.py",
+    "tests/test_solver.py"
+]
