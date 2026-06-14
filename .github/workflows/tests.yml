@@ -28,4 +28,4 @@ jobs:
             tests/unit/test_solver.py
             tests/unit/test_utils.py
         run: |
-          uv run pytest $TEST_FILES
+          uv run --no-dev pytest $TEST_FILES
