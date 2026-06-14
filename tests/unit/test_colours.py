@@ -1,6 +1,6 @@
 import pytest
 
-from src.colours import bgr
+from design.colours import bgr
 
 def test_bgr_with_know_colours():
     """
