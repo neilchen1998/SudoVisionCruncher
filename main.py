@@ -4,13 +4,13 @@ import matplotlib.pyplot as plt
 
 from pathlib import Path
 
-from src.digit_predict import load_model
-from src.parse_sudoku_board import flatten_board, parse_sudoku_board
-from src.profiler import PipelineProfiler
-from src.render_sudoku_solution import render_solution_overlay, overlay_solution_on_board
+from vision.digit_predict import load_model
+from vision.parse_sudoku_board import flatten_board, parse_sudoku_board
+from profiler.profiler import PipelineProfiler
+from render.render_sudoku_solution import render_solution_overlay, overlay_solution_on_board
 from sudoku.solver import solve_sudoku
-from src.colours import bgr
-from src.font import LABEL_TO_FONT_NAME
+from design.colours import bgr
+from design.font import LABEL_TO_FONT_NAME
 
 def print_board(board: list[list[int]], width: int = 3):
     """
