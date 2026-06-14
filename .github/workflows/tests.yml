@@ -21,4 +21,4 @@ jobs:
         run: uv sync --no-dev
 
       - name: Run tests
-        run: uv run pytest -o pythonpath=. ./tests/test_board_io.py
+        run: uv run pytest
