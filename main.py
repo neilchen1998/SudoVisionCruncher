@@ -1,16 +1,17 @@
+from importlib.metadata import version, metadata
+from pathlib import Path
 import argparse
 import cv2
 import matplotlib.pyplot as plt
 
-from pathlib import Path
-
-from vision.digit_predict import load_model
-from vision.parse_sudoku_board import flatten_board, parse_sudoku_board
+from design.colours import bgr
+from design.font import LABEL_TO_FONT_NAME
+from importlib.metadata import version
 from profiler.profiler import PipelineProfiler
 from render.render_sudoku_solution import render_solution_overlay, overlay_solution_on_board
 from sudoku.solver import solve_sudoku
-from design.colours import bgr
-from design.font import LABEL_TO_FONT_NAME
+from vision.digit_predict import load_model
+from vision.parse_sudoku_board import flatten_board, parse_sudoku_board
 
 def print_board(board: list[list[int]], width: int = 3):
     """
@@ -35,8 +36,16 @@ def main():
     OCR_MODEL_PATH = ROOT_DIR / "models" / "digit_recognition_model_TMNIST.keras"
     FONT_MODEL_PATH = ROOT_DIR / "models" / "font_recognition_MobileNetV2.keras"
 
+    # Get the version from TOML
+    __version__ = version("sudovisioncruncher")
+
     # Create a parser
-    parser = argparse.ArgumentParser(prog="SudoVisionCruncher", description="Hello, user:")
+    parser = argparse.ArgumentParser(
+        prog="SudoVisionCruncher",
+        description="",
+        epilog="Example:\n  uv run -m main ./data/sudoku.png",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
 
     # Positional argument(s) (require by default)
     parser.add_argument("image_path", type=Path, help="The path of the Sudoku image")
@@ -47,6 +56,7 @@ def main():
     parser.add_argument("-V", "--verbose", action="store_true", default=False, help="Print the pipeline profile summary")
     parser.add_argument("--output", "-o", help="The output path", default=None)
     parser.add_argument("--colour", "-c", type=str, help="Overlay colour", default='red')
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
 
     # Parse the arguments
     args = parser.parse_args()

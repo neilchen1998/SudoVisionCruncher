@@ -1,6 +1,5 @@
-import webcolors
-
 from difflib import get_close_matches
+import webcolors
 
 CSS_COLOURS = list(webcolors.names())
 
