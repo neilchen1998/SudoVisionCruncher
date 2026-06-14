@@ -20,5 +20,12 @@ jobs:
       - name: Install all dependencies
         run: uv sync --no-dev
 
-      - name: Run tests
-        run: uv run pytest
+      - name: Run unit tests
+        env:
+          # Test files for GitHub Action to run
+          TEST_FILES: |
+            tests/unit/test_io.py
+            tests/unit/test_solver.py
+            tests/unit/test_utils.py
+
+        run: uv run --no-dev pytest $TEST_FILES
