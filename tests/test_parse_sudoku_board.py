@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 import random
 
-from src.sudoku_utils import is_valid_sudoku
+from sudoku.utils import is_valid_sudoku
 from src.parse_sudoku_board import flatten_board
 
 # This is a valid and completed Sudoku board

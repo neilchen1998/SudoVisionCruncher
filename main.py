@@ -8,7 +8,7 @@ from src.digit_predict import load_model
 from src.parse_sudoku_board import flatten_board, parse_sudoku_board
 from src.profiler import PipelineProfiler
 from src.render_sudoku_solution import render_solution_overlay, overlay_solution_on_board
-from src.solver import solve_sudoku
+from sudoku.solver import solve_sudoku
 from src.colours import bgr
 from src.font import LABEL_TO_FONT_NAME
 

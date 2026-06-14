@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "sudovisioncruncher"
 version = "1.2.0"
@@ -25,9 +29,11 @@ dev = [
     "tensorflow==2.18.0; sys_platform == 'linux' or sys_platform == 'win32'",
 ]
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/sudoku"]
+
 # Pytest
 [tool.pytest.ini_options]
-pythonpath = "."
 testpaths = [
     "tests/test_board_io.py",
     "tests/test_helper.py",

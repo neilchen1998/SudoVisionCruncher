@@ -1,7 +1,7 @@
 import json
 import pytest
 
-from src.board_io import save_sudoku_json, open_sudoku_json
+from sudoku.board_io import save_sudoku_json, open_sudoku_json
 
 @pytest.fixture(scope="session")
 def sample_sudoku_board():

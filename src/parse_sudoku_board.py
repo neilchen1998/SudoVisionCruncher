@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
-from src.sudoku_utils import is_valid_sudoku
+from sudoku.utils import is_valid_sudoku
 
 def flatten_board(img: np.ndarray, N: int = 450) -> tuple[np.ndarray, np.ndarray]:
 
