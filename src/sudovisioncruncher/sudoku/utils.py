@@ -1,27 +1,27 @@
 def is_valid_sequence(seq: list[int]) -> bool:
+    """
+    Checks if a given Sudoku sequence (row or column) is valid
 
-        """
-        Checks if a given Sudoku sequence (row or column) is valid
+    Args:
+        seq: A list of integers representing the input Sudoku sequence
 
-        Args:
-            seq: A list of integers representing the input Sudoku sequence
+    Returns:
+        bool: True if the Sudoku seqeunce board is valid, False otherwise
+    """
 
-        Returns:
-            bool: True if the Sudoku seqeunce board is valid, False otherwise
-        """
+    # Create a set
+    seen = set()
 
-        # Create a set
-        seen = set()
+    # Loop through all numbers in the list
+    for num in seq:
+        if num == 0:
+            continue
+        elif num in seen:
+            return False
+        else:
+            seen.add(num)
+    return True
 
-        # Loop through all numbers in the list
-        for num in seq:
-            if num == 0:
-                continue
-            elif num in seen:
-                return False
-            else:
-                seen.add(num)
-        return True
 
 def is_valid_sudoku(board: list[list[int]]) -> bool:
     """
@@ -56,6 +56,7 @@ def is_valid_sudoku(board: list[list[int]]) -> bool:
                 return False
 
     return True
+
 
 def print_board(board: list[list[int]], width: int = 3) -> None:
     """

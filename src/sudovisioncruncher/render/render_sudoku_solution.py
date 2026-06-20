@@ -4,6 +4,7 @@ import numpy as np
 
 from sudovisioncruncher.design.font import LABEL_TO_FONT
 
+
 def render_solution_overlay(
     solved_board: list[list[int]],
     empty_positions: list[tuple[int, int]],
@@ -53,10 +54,11 @@ def render_solution_overlay(
             digit,
             font=font,
             fill=colour,
-            anchor="mm"
+            anchor="mm",
         )
 
     return np.array(img)
+
 
 def overlay_solution_on_board(img: np.ndarray, overlay: np.ndarray, M: np.ndarray) -> np.ndarray:
     """
@@ -81,7 +83,7 @@ def overlay_solution_on_board(img: np.ndarray, overlay: np.ndarray, M: np.ndarra
     warped_overlay = cv2.warpPerspective(overlay, M_inv, (w, h))
 
     # Create a mask that for the foreground image from the channel maximum
-    channel_max = np.max(warped_overlay, axis=2)    # takes the max. of its 3-channel value
+    channel_max = np.max(warped_overlay, axis=2)  # takes the max. of its 3-channel value
     _, mask = cv2.threshold(channel_max, 10, 255, cv2.THRESH_BINARY)
 
     # Keep the cells that contain the solution
