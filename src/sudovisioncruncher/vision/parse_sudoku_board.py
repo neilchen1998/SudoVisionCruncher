@@ -4,10 +4,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 
-from sudoku.utils import is_valid_sudoku
+from sudovisioncruncher.sudoku.utils import is_valid_sudoku
+
 
 def flatten_board(img: np.ndarray, N: int = 450) -> tuple[np.ndarray, np.ndarray]:
-
     """
     Flattens a Sudoku board
 
@@ -25,7 +25,9 @@ def flatten_board(img: np.ndarray, N: int = 450) -> tuple[np.ndarray, np.ndarray
 
     # Check if the input dimension is bigger than N
     if img.shape[0] < N or img.shape[1] < N:
-        raise ValueError(f"Input image is smaller than {N}x{N} ({img.shape[0]}x{img.shape[1]}).")
+        raise ValueError(
+            f"Input image is smaller than {N}x{N} ({img.shape[0]}x{img.shape[1]})."
+        )
 
     # Turn into grey scale
     grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -34,7 +36,14 @@ def flatten_board(img: np.ndarray, N: int = 450) -> tuple[np.ndarray, np.ndarray
     blurred = cv2.GaussianBlur(grey, (5, 5), 0)
 
     # Convert the blurry greyscale image into sharp black-and-white only image
-    thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, blockSize=11, C=2)
+    thresh = cv2.adaptiveThreshold(
+        blurred,
+        255,
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY_INV,
+        blockSize=11,
+        C=2,
+    )
 
     # Find all the contours of the Sudoku board
     # NOTE: the contours are unsorted
@@ -92,12 +101,15 @@ def flatten_board(img: np.ndarray, N: int = 450) -> tuple[np.ndarray, np.ndarray
     vertices = np.float32([v[0] for v in approx])
     sorted_vertices = sort_vertices(vertices)
 
-    dst_vertices = np.array([
-        [0, 0],         # Top-Left destination
-        [N - 1, 0],     # Top-Right destination
-        [N - 1, N - 1], # Bottom-Right destination
-        [0, N - 1]      # Bottom-Left destination
-    ], dtype="float32")
+    dst_vertices = np.array(
+        [
+            [0, 0],  # Top-Left destination
+            [N - 1, 0],  # Top-Right destination
+            [N - 1, N - 1],  # Bottom-Right destination
+            [0, N - 1],  # Bottom-Left destination
+        ],
+        dtype="float32",
+    )
 
     # Calculate the perspective transform matrix
     M = cv2.getPerspectiveTransform(sorted_vertices, dst_vertices)
@@ -107,7 +119,10 @@ def flatten_board(img: np.ndarray, N: int = 450) -> tuple[np.ndarray, np.ndarray
 
     return flat_board, M
 
-def preprocess_digit(digit: np.ndarray, digit_target_size: int, canvas_size: int) -> np.ndarray:
+
+def preprocess_digit(
+    digit: np.ndarray, digit_target_size: int, canvas_size: int
+) -> np.ndarray:
     """
     Resizes a digit while preserving aspect ratio,
     centers it on a square canvas,
@@ -136,15 +151,17 @@ def preprocess_digit(digit: np.ndarray, digit_target_size: int, canvas_size: int
     y_offset = (canvas_size - new_h) // 2
 
     # Put the digit in the center of a canvas
-    canvas[
-        y_offset:y_offset + new_h,
-        x_offset:x_offset + new_w
-    ] = resized_digit
+    canvas[y_offset : y_offset + new_h, x_offset : x_offset + new_w] = resized_digit
 
     # Normalize to [0, 1]
     return canvas.astype(np.float32) / 255.0
 
-def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model: tf.keras.Model) -> tuple[list[list[int]], list[tuple[int, int, int]]]:
+
+def parse_sudoku_board(
+    board: np.ndarray,
+    ocr_model: tf.keras.Model,
+    font_model: tf.keras.Model
+) -> tuple[list[list[int]], list[tuple[int, int, int]]]:
     """
     Parse a 9x9 grid image into a 2D list of predicted digits using OCR
 
@@ -195,10 +212,7 @@ def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model:
 
             # Remove the outer margin to avoid boarders
             margin = int(cell_size * MARGIN_RATIO)
-            cell = cell[
-                margin:cell_size-margin,
-                margin:cell_size-margin
-            ]
+            cell = cell[margin : cell_size - margin, margin : cell_size - margin]
 
             # Blur the image
             blur = cv2.GaussianBlur(cell, (3, 3), 0)
@@ -211,22 +225,16 @@ def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model:
                 cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                 cv2.THRESH_BINARY_INV,
                 blockSize=THRESH_BLOCK_SIZE,
-                C=THRESH_C
+                C=THRESH_C,
             )
 
             # Remove noises by using a 2x2 kernel
             kernel = np.ones((2, 2), np.uint8)
-            thresh = cv2.morphologyEx(
-                thresh,
-                cv2.MORPH_OPEN,
-                kernel
-            )
+            thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
 
             # Find the contour of the digit
             contours, _ = cv2.findContours(
-                thresh,
-                cv2.RETR_EXTERNAL,
-                cv2.CHAIN_APPROX_SIMPLE
+                thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
             )
 
             # If there is no contour, then we deduce the current cell is blank
@@ -254,13 +262,11 @@ def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model:
                 continue
 
             # Crop the digit
-            digit = thresh[y:y+h, x:x+w]
+            digit = thresh[y : y + h, x : x + w]
 
             # Put the digit in the center of a 28x28 canvas
             cell_input = preprocess_digit(
-                digit,
-                DIGIT_TARGET_SIZE,
-                OCR_MODEL_INPUT_SIZE
+                digit, DIGIT_TARGET_SIZE, OCR_MODEL_INPUT_SIZE
             )
 
             # Append the cell to the OCR list
@@ -268,7 +274,9 @@ def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model:
             positions.append((r, c))
 
             # Font
-            cell_input_font = preprocess_digit(digit, int(FONT_MODEL_INPUT_SIZE * 0.8), FONT_MODEL_INPUT_SIZE)
+            cell_input_font = preprocess_digit(
+                digit, int(FONT_MODEL_INPUT_SIZE * 0.8), FONT_MODEL_INPUT_SIZE
+            )
 
             # Append the cell to the font list
             batch_inputs_font.append(cell_input_font)
@@ -278,10 +286,7 @@ def parse_sudoku_board(board: np.ndarray, ocr_model: tf.keras.Model, font_model:
 
         # Reshape inputs into a numpy array
         batch_array_digit = np.array(batch_inputs_ocr).reshape(
-            -1, # the original shape
-            OCR_MODEL_INPUT_SIZE,
-            OCR_MODEL_INPUT_SIZE,
-            1
+            -1, OCR_MODEL_INPUT_SIZE, OCR_MODEL_INPUT_SIZE, 1  # the original shape
         )
 
         # Predict the digits in a single batch

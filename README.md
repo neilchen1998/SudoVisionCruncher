@@ -40,25 +40,25 @@ uv pip install -e .
 Run the main script with default OCR model:
 
 ```zsh
-uv run -m main <sudoku.png>
+uv run sudovisioncruncher <sudoku.png>
 ```
 
 Run the main script with specific OCR model:
 
 ```zsh
-uv run -m main <sudoku.png> -m <OCR_model.keras>
+uv run sudovisioncruncher <sudoku.png> -m <OCR_model.keras>
 ```
 
 Run the main script and store the result:
 
 ```zsh
-uv run -m main <sudoku.png> -o <output.png>
+uv run sudovisioncruncher <sudoku.png> -o <output.png>
 ```
 
 Run the main script with specific colour (orange, yellow, etc.):
 
 ```zsh
-uv run -m main <sudoku.png> -c <colour>
+uv run sudovisioncruncher <sudoku.png> -c <colour>
 ```
 
 Run all the **pytest** test cases:
@@ -82,7 +82,7 @@ The following shows an example Sudoku input image:
 Run the script with:
 
 ```zsh
-uv run -m main ./data/sudoku.png
+uv run sudovisioncruncher ./data/sudoku.png
 ```
 
 A preview window will appear showing the result:
@@ -92,7 +92,7 @@ A preview window will appear showing the result:
 If you provide the *-o* argument, the result will be saved to the given path in addition to being displayed.
 
 ```zsh
-uv run -m main ./data/sudoku.png -o example/sudoku-result.png
+uv run sudovisioncruncher ./data/sudoku.png -o example/sudoku-result.png
 ```
 
 Saved output:
@@ -526,7 +526,7 @@ suggestion = get_close_matches(name.lower(), CSS_COLOURS, n=1)
 Let say the user run the main script with the an invalid colour name (**gren** instead of **green**):
 
 ```zsh
-uv run -m main ./data/sudoku.png -c gren
+uv run sudovisioncruncher ./data/sudoku.png -c gren
 ```
 
 And the user will get **ValueError** and with the following prompt:

@@ -2,6 +2,7 @@ from collections.abc import Callable
 from time import perf_counter
 from typing import Any
 
+
 class PipelineProfiler:
     """
     Records execution times for named stages in a processing pipeline
@@ -17,7 +18,7 @@ class PipelineProfiler:
     def __init__(self) -> None:
         self.timings: dict[str, float] = {}
 
-    def profile(self, name:str, fn: Callable[..., Any], *args, **kwargs) -> Any:
+    def profile(self, name: str, fn: Callable[..., Any], *args, **kwargs) -> Any:
         """
         Executes a callable function and records its execution time
 

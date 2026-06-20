@@ -3,7 +3,7 @@ import pytest
 
 from pathlib import Path
 
-from vision.digit_predict import run_digit_prediction_pipeline
+from sudovisioncruncher.vision.digit_predict import run_digit_prediction_pipeline
 
 def test_run_digit_prediction_pipeline(request):
     """

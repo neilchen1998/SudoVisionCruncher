@@ -3,6 +3,7 @@ import numpy as np
 import os
 import tensorflow as tf
 
+
 def load_model(model_path: str, verbose: bool = False) -> tf.keras.Model:
     """
     Loads the tensorflow model
@@ -25,7 +26,10 @@ def load_model(model_path: str, verbose: bool = False) -> tf.keras.Model:
 
     return model
 
-def load_and_preprocess_image(image_path: str, target_size: tuple[int, int] = (28, 28), inverse: bool = True) -> np.ndarray:
+
+def load_and_preprocess_image(
+    image_path: str, target_size: tuple[int, int] = (28, 28), inverse: bool = True
+) -> np.ndarray:
     """
     Loads an image in grey scale, resizes it, optionally inverts the colour,
     normalizes it, and reshapes it for the model
@@ -53,11 +57,12 @@ def load_and_preprocess_image(image_path: str, target_size: tuple[int, int] = (2
         img_ret = cv2.bitwise_not(img_ret)
 
     # Normalize the pixel values to [0, 1]
-    img_ret = img_ret.astype('float32') / 255.0
+    img_ret = img_ret.astype("float32") / 255.0
 
     img_ret = np.reshape(img_ret, (-1, target_size[0], target_size[1], 1))
 
     return img_ret
+
 
 def predict_digit(model: tf.keras.Model, img: np.ndarray) -> tuple[int, float]:
     """
@@ -77,6 +82,7 @@ def predict_digit(model: tf.keras.Model, img: np.ndarray) -> tuple[int, float]:
     confidence = np.max(predictions) * 100
 
     return predicted_digit, confidence
+
 
 def run_digit_prediction_pipeline(model_path: str, image_path: str) -> tuple[int, float]:
     """

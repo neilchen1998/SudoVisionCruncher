@@ -3,6 +3,7 @@ import webcolors
 
 CSS_COLOURS = list(webcolors.names())
 
+
 def bgr(name: str) -> tuple[int, int, int]:
     """
     Coverts a given CSS colour name to OpenCV BGR colour tuple
@@ -27,7 +28,9 @@ def bgr(name: str) -> tuple[int, int, int]:
 
         # Show the suggestion(s) if any
         if suggestion:
-            raise ValueError(f"Unknown colour: {name}. Did you mean '{suggestion[0]}'?") from None  # suppresses the original exception
+            raise ValueError(
+                f"Unknown colour: {name}. Did you mean '{suggestion[0]}'?"
+            ) from None  # suppresses the original exception
 
         # No suggestion can be found
         raise ValueError(f"Unknown colour: '{name}'.") from None
