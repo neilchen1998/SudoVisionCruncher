@@ -12,22 +12,6 @@ from sudovisioncruncher.sudoku.solver import solve_sudoku
 from sudovisioncruncher.vision.digit_predict import load_model
 from sudovisioncruncher.vision.parse_sudoku_board import flatten_board, parse_sudoku_board
 
-def print_board(board: list[list[int]], width: int = 3):
-    """
-    Prints the Sudoku board
-
-    Args:
-        board: The Sudoku board
-        width: The width of each digit in character
-    """
-
-    # The top border
-    print("+" + ("-" * (width + 2) + "+") * len(board[0]))
-
-    for row in board:
-        print("|" + "|".join(f" {str(cell).center(width)} " for cell in row) + "|")
-        print("+" + ("-" * (width + 2) + "+") * len(board[0]))
-
 def main():
 
     # Set the default model path

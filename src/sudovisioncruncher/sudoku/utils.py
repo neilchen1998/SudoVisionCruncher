@@ -1,4 +1,4 @@
-def is_valid_sequence(seq: list[int]):
+def is_valid_sequence(seq: list[int]) -> bool:
 
         """
         Checks if a given Sudoku sequence (row or column) is valid
@@ -56,3 +56,19 @@ def is_valid_sudoku(board: list[list[int]]) -> bool:
                 return False
 
     return True
+
+def print_board(board: list[list[int]], width: int = 3) -> None:
+    """
+    Prints the Sudoku board
+
+    Args:
+        board: The Sudoku board
+        width: The width of each digit in character
+    """
+
+    # The top border
+    print("+" + ("-" * (width + 2) + "+") * len(board[0]))
+
+    for row in board:
+        print("|" + "|".join(f" {str(cell).center(width)} " for cell in row) + "|")
+        print("+" + ("-" * (width + 2) + "+") * len(board[0]))

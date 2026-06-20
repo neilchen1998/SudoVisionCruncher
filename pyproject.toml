@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sudovisioncruncher"
-version = "2.0.0"
+version = "2.1.0"
 authors = [
   { name="Chen, Neil", email="neilchen1998@gmail.com" },
 ]
@@ -12,7 +12,7 @@ readme = "README.md"
 description = "Computer vision pipeline that detects unsolved Sudoku puzzles from images, solves them, and renders the solution back onto the original image using a matching font."
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: Apache Software License",  # <-- Changed this line
+    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
 ]
 license = { text = "Apache-2.0" }
@@ -43,5 +43,5 @@ dev = [
 [project.scripts]
 sudovisioncruncher = "sudovisioncruncher.cli:main"
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.hatch.build.targets.wheel]
+packages = ["src/sudovisioncruncher"]
