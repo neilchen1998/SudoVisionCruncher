@@ -4,14 +4,13 @@ import argparse
 import cv2
 import matplotlib.pyplot as plt
 
-from design.colours import bgr
-from design.font import LABEL_TO_FONT_NAME
-from importlib.metadata import version
-from profiler.profiler import PipelineProfiler
-from render.render_sudoku_solution import render_solution_overlay, overlay_solution_on_board
-from sudoku.solver import solve_sudoku
-from vision.digit_predict import load_model
-from vision.parse_sudoku_board import flatten_board, parse_sudoku_board
+from sudovisioncruncher.design.colours import bgr
+from sudovisioncruncher.design.font import LABEL_TO_FONT_NAME
+from sudovisioncruncher.profiler.profiler import PipelineProfiler
+from sudovisioncruncher.render.render_sudoku_solution import render_solution_overlay, overlay_solution_on_board
+from sudovisioncruncher.sudoku.solver import solve_sudoku
+from sudovisioncruncher.vision.digit_predict import load_model
+from sudovisioncruncher.vision.parse_sudoku_board import flatten_board, parse_sudoku_board
 
 def print_board(board: list[list[int]], width: int = 3):
     """
@@ -32,7 +31,7 @@ def print_board(board: list[list[int]], width: int = 3):
 def main():
 
     # Set the default model path
-    ROOT_DIR = Path(__file__).resolve().parent
+    ROOT_DIR = Path(__file__).resolve().parents[2]
     OCR_MODEL_PATH = ROOT_DIR / "models" / "digit_recognition_model_TMNIST.keras"
     FONT_MODEL_PATH = ROOT_DIR / "models" / "font_recognition_MobileNetV2.keras"
 

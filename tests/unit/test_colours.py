@@ -1,6 +1,6 @@
 import pytest
 
-from design.colours import bgr
+from sudovisioncruncher.design.colours import bgr
 
 def test_bgr_with_know_colours():
     """

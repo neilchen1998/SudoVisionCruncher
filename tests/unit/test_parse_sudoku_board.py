@@ -3,8 +3,8 @@ import numpy as np
 import pytest
 import random
 
-from sudoku.utils import is_valid_sudoku
-from vision.parse_sudoku_board import flatten_board
+from sudovisioncruncher.sudoku.utils import is_valid_sudoku
+from sudovisioncruncher.vision.parse_sudoku_board import flatten_board
 
 # This is a valid and completed Sudoku board
 VALID_COMPLETED = [

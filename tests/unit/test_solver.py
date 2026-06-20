@@ -2,8 +2,8 @@ import pytest
 import random
 from hypothesis import given, strategies as st
 
-from sudoku.solver import solve_sudoku
-from sudoku.utils import is_valid_sudoku
+from sudovisioncruncher.sudoku.solver import solve_sudoku
+from sudovisioncruncher.sudoku.utils import is_valid_sudoku
 
 EASY_PUZZLE = [
     [5,3,0,0,7,0,0,0,0],
