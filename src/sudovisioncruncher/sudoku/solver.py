@@ -55,38 +55,46 @@ def solve_sudoku(board: list[list[int]]) -> list[list[int]]:
         best_candidate = 0
         best_cnt = 10
 
-        # Find the emtpy cell with the least amount of candidates
+        # Loop through all emtpy cells to find the cell that ahs the least amount of candidates
         for i, (r, c) in enumerate(empties):
 
+            # Skip non-empty cells
             if board[r][c] != 0:
                 continue
 
             b = box_index(r, c)
 
+            # Get all the candidates in bit-format
             candidates = (~(rows[r] | cols[c] | boxes[b])) & 0x3FE
             cnt = candidates.bit_count()
 
+            # This is a dead end since it is impossible to have a cell w/o candidate
             if cnt == 0:
                 return False
 
+            # Update the current best candidate
             if cnt < best_cnt:
                 best_cnt = cnt
                 best_candidate = candidates
                 best_idx = i
 
+                # Early break since this is the best candidate that we can get
                 if cnt == 1:
                     break
 
+        # Early return if there is no non-empty cell
         if best_idx == -1:
             return True
 
+        # Get the metadata of the best cell
         r, c = empties[best_idx]
         b = box_index(r, c)
-
         candidates = best_candidate
 
+        # Loop through all the possible candidates
         while candidates:
 
+            # Get the digit from the bit-format
             bit = candidates & -candidates
             num = bit.bit_length() - 1
 
@@ -96,6 +104,7 @@ def solve_sudoku(board: list[list[int]]) -> list[list[int]]:
             cols[c] |= bit
             boxes[b] |= bit
 
+            # Proceed to find next cell
             if backtrack():
                 return True
 
@@ -104,7 +113,6 @@ def solve_sudoku(board: list[list[int]]) -> list[list[int]]:
             rows[r] ^= bit
             cols[c] ^= bit
             boxes[b] ^= bit
-
             candidates &= (candidates - 1)
 
         return False
