@@ -1,6 +1,6 @@
 def solve_sudoku(board: list[list[int]]) -> list[list[int]]:
     """
-    Solves Sudoku
+    Solves Sudoku using MRV (Minimum Remaining Values heuristic) method.
 
     Args:
         board: The Sudoku board
@@ -17,7 +17,7 @@ def solve_sudoku(board: list[list[int]]) -> list[list[int]]:
 
     def box_index(r: int, c: int) -> int:
         """
-        Calculates the box index based on the cell
+        Calculates the box index based on the cell.
 
         Args:
             r: the row index
@@ -51,25 +51,43 @@ def solve_sudoku(board: list[list[int]]) -> list[list[int]]:
             bool: True if the Sudoku is solved successfully, False if no valid number can be placed
         """
 
-        # Check if we have finished backtracking
-        if i >= len(empties):
+        best_idx = -1
+        best_candidate = 0
+        best_cnt = 10
+
+        # Find the emtpy cell with the least amount of candidates
+        for i, (r, c) in enumerate(empties):
+
+            if board[r][c] != 0:
+                continue
+
+            b = box_index(r, c)
+
+            candidates = (~(rows[r] | cols[c] | boxes[b])) & 0x3FE
+            cnt = candidates.bit_count()
+
+            if cnt == 0:
+                return False
+
+            if cnt < best_cnt:
+                best_cnt = cnt
+                best_candidate = candidates
+                best_idx = i
+
+                if cnt == 1:
+                    break
+
+        if best_idx == -1:
             return True
 
-        # Get the indices of the current cell
-        r, c = empties[i]
+        r, c = empties[best_idx]
         b = box_index(r, c)
 
-        # Get the valid numbers in a bitmask format
-        # NOTE: 0x3FE represents 0b1111111110
-        candidates = (~(rows[r] | cols[c] | boxes[b])) & 0x3FE
+        candidates = best_candidate
 
-        # Loop through all the options
         while candidates:
 
-            # Grab the lowest 1 bit
             bit = candidates & -candidates
-
-            # Convert it to number (decimal)
             num = bit.bit_length() - 1
 
             # Place the digit
@@ -78,8 +96,7 @@ def solve_sudoku(board: list[list[int]]) -> list[list[int]]:
             cols[c] |= bit
             boxes[b] |= bit
 
-            # Backtrack the next index
-            if backtrack(i + 1):
+            if backtrack():
                 return True
 
             # Undo
@@ -88,10 +105,8 @@ def solve_sudoku(board: list[list[int]]) -> list[list[int]]:
             cols[c] ^= bit
             boxes[b] ^= bit
 
-            # Clear the bit that we just ran and move to the next candidate
-            candidates &= candidates - 1
+            candidates &= (candidates - 1)
 
-        # If we reach here that means we have exhausted all the possibilities and the puzzle cannot be solved
         return False
 
     backtrack()
