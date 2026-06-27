@@ -11,9 +11,7 @@ def solve_sudoku(board: list[list[int]]) -> list[list[int]]:
 
     return SudokuMRVSolver(board).solve()
 
-
 class SudokuMRVSolver:
-
 
     def __init__(self, board: list[list[int]]):
 
@@ -70,22 +68,24 @@ class SudokuMRVSolver:
 
         return (r // 3) * 3 + (c // 3)
 
-    def _find_best_cell(self) -> tuple[int, int]:
+    def _find_best_cell(self) -> tuple[int, int, int] | None:
         """
-        Finds the emtpy cell with the fewest candidates.
+        Finds the emtpy cell with the fewest candidates using MRV heuristic
 
         Returns:
-            tuple:
-                int: index of the cell with the fewest candidates
+            tuple | None:
+                int: the row index of the fewest candidates
+                int: the column index of the fewest candidates
                 int: the mask of its candidates
+                None: if there is no empty cell on the board
         """
 
-        best_idx = -1
+        best_r, best_c = -1, -1
         best_candidates = 0
         best_cnt = 10
 
         # Loop through all emtpy cells to find the cell that ahs the least amount of candidates
-        for i, (r, c) in enumerate(self.empties):
+        for r, c in self.empties:
 
             # Skip non-empty cells
             if self.board[r][c] != 0:
@@ -99,19 +99,22 @@ class SudokuMRVSolver:
 
             # This is a dead end since it is impossible to have a cell w/o candidate
             if cnt == 0:
-                return -2, 0
+                return r, c, 0
 
             # Update the current best candidate
             if cnt < best_cnt:
                 best_cnt = cnt
                 best_candidates = candidates
-                best_idx = i
+                best_r, best_c = r, c
 
                 # Early break since this is the best candidate that we can get
                 if cnt == 1:
                     break
 
-        return best_idx, best_candidates
+        if best_cnt == 10:
+            return None
+
+        return best_r, best_c, best_candidates
 
     def _backtrack(self) -> bool:
         """
@@ -121,19 +124,26 @@ class SudokuMRVSolver:
             bool: True if the Sudoku is solved successfully, False if no valid number can be placed
         """
 
-        idx, candidates = self._find_best_cell()
+        result = self._find_best_cell()
 
         # Early return if there is no non-empty cell
-        if idx == -1:
+        if result is None:
             return True
 
+        # Get the metadata of the best cell
+        r, c, candidates = result
+
         # Early return if there is a dead end
-        elif idx == -2:
+        if candidates == 0:
             return False
 
-        # Get the metadata of the best cell
-        r, c = self.empties[idx]
         b = self._box_index(r, c)
+
+        # Cache references locally to optimize lookups
+        board = self.board
+        rows = self.rows
+        cols = self.cols
+        boxes = self.boxes
 
         # Loop through all the possible candidates
         while candidates:
@@ -143,20 +153,20 @@ class SudokuMRVSolver:
             num = bit.bit_length() - 1
 
             # Place the digit
-            self.board[r][c] = num
-            self.rows[r] |= bit
-            self.cols[c] |= bit
-            self.boxes[b] |= bit
+            board[r][c] = num
+            rows[r] |= bit
+            cols[c] |= bit
+            boxes[b] |= bit
 
             # Proceed to find next cell
             if self._backtrack():
                 return True
 
             # Undo
-            self.board[r][c] = 0
-            self.rows[r] ^= bit
-            self.cols[c] ^= bit
-            self.boxes[b] ^= bit
+            board[r][c] = 0
+            rows[r] ^= bit
+            cols[c] ^= bit
+            boxes[b] ^= bit
             candidates &= (candidates - 1)
 
         return False
